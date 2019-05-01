@@ -1,0 +1,142 @@
+arandr (0.1.9-2) unstable; urgency=medium
+
+  * Change debhelper compat to 10
+  * Update standards-version to 3.9.8
+  * Explicitly enable dh_python2 (Closes: #849689)
+  * Drop needless debian/dirs
+  * Copyright: Use https URIs
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Wed, 25 Jan 2017 11:38:24 +0100
+
+arandr (0.1.9-1) unstable; urgency=medium
+
+  * New upstream release
+    - Declare compatibility with xrandr 0.1.5 (Closes: #815731)
+    - New translations
+  * Copyright file updates
+  * Drop .menu file (Closes: #797973)
+  * Change Standards-Version to 3.9.7 (no changes)
+  * Switch to secure Vcs- URIs
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Wed, 24 Feb 2016 14:00:35 +0100
+
+arandr (0.1.8-1) unstable; urgency=medium
+
+  * New upstream release
+    - Allow setting the primary output
+    - New translations
+  * Change Standards-Version to 3.9.6 (no changes)
+  * Update package source addresses
+  * Replace shipped license file with symlink to common-licenses
+  * Copyright file updates
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Fri, 26 Jun 2015 12:36:06 +0200
+
+arandr (0.1.7.1-1) unstable; urgency=low
+
+  * New upstream release
+    - Compatibility with non "<width>x<height" modes (Closes: #507521)
+    - Compatibility with xrandr client 1.4.0 ("primary" issue)
+    - New translations
+  * Note new translations and contributor in copyright file
+  * Change Standards-Version to 3.9.4 (no changes)
+    - Specify branch of Vcs-git field
+  * Add a Debian menu file (Closes: #692176)
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Mon, 04 Mar 2013 19:11:30 +0100
+
+arandr (0.1.6-1) unstable; urgency=low
+
+  * New upstream release
+    - New translations
+    - Bugfixes
+  * Note new translators in copyright file
+  * Change Standards-Version to 3.9.3 (no changes)
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Sat, 02 Jun 2012 16:00:04 +0200
+
+arandr (0.1.5-1) UNRELEASED; urgency=low
+
+  * New upstream release
+    - New translations
+    - New `unxrandr` tool
+  * Added a bug script that includes xrandr output in bug reports
+  * Fixed typo in description (closes: #623518)
+  * Note new translators in copyright file
+  * Change Standards-Version to 3.9.2 (no changes)
+  * Updated copyright file to DEP-5 release, now usable with config-model
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Sun, 09 Oct 2011 15:52:10 +0200
+
+arandr (0.1.4-1) unstable; urgency=low
+
+  * New upstream version
+    - New translations
+    - Bugfix
+  * Note new translations in copyright file
+  * Change Standards-Version to 3.9.1 (no changes)
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Mon, 13 Dec 2010 14:59:09 +0100
+
+arandr (0.1.3-1) unstable; urgency=low
+
+  * Change Standards-Version to 3.8.4 (no changes)
+  * New upstream version
+    - New translations
+    - Minor bugfixes 
+  * Add build dependency on python-docutils for man page generation
+  * Note new translations in copyright file
+  * Install new docs
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Fri, 12 Mar 2010 21:20:48 +0100
+
+arandr (0.1.2-3) unstable; urgency=low
+
+  * Add Vcs-* to debian/control
+  * Switch to python-support (and simplify debian/rules; closes: #566037)
+  * Switch to dpkg-source 3.0 (quilt) format
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Sun, 24 Jan 2010 22:05:38 +0100
+
+arandr (0.1.2-2) unstable; urgency=low
+
+  * Use --install-layout=deb (closes: #557790)
+  * Copyright file according to DEP-5
+  * Better use of debhelper
+  * Updated to policy 3.8.3 (no changes required)
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Wed, 25 Nov 2009 18:41:38 +0100
+
+arandr (0.1.2-1) unstable; urgency=low
+
+  * New release (closes: #523903)
+      + Accepts XRandR version 1.3
+      + New command line switch to accept untested versions
+  * Change Standards-Version to 3.8.1 (no changes)
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Mon, 13 Apr 2009 17:00:17 +0200
+
+arandr (0.1.1-2) unstable; urgency=low
+
+  * Fix GPL2/GPL3 mismatch
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Sun, 26 Oct 2008 11:26:45 +0100
+
+arandr (0.1.1-1) unstable; urgency=low
+
+  * Minor bugfixes, translation additions
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Mon, 21 Jul 2008 21:12:59 +0000
+
+arandr (0.1-1) unstable; urgency=low
+
+  * Initial release (closes: #484849)
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Thu, 5 Jun 2008 22:47:54 +0000
+
+arandr (0.0-1) unstable; urgency=low
+
+  * Initial pre-release package
+
+ -- chrysn <chrysn@fsfe.org>  Mon, 17 Mar 2008 16:08:54 +0000
+

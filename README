@@ -1,0 +1,219 @@
+==========================
+ARandR: Another XRandR GUI
+==========================
+
+
+ARandR is designed to provide a simple visual front end for XRandR_. Relative monitor positions are shown graphically and can be changed in a drag-and-drop way.
+
+
+
+Features
+--------
+
+* Full control over output positioning (instead of plain "left of") with edge snapping
+* Saving configurations as executable shell scripts (configurations can be loaded without using this program)
+* Configuration files can be edited to include additional payload (like xsetwacom_ commands tablet PC users need when rotating), which is preserved when editing
+* Metacity key binding integration:
+
+  * Saved configurations can be bound to arbitrary keys via metacity's custom commands.
+  * Several layouts can be bound to one key; they are cycled through. (Useful for "rotate" buttons on tablet PCs.)
+
+* Main widget separated from packaged application (to facilitate integration with existing solutions)
+
+
+
+Installation
+------------
+
+* Using your distribution's installer:
+
+  * Debian_ / Ubuntu_::
+
+      aptitude install arandr
+
+  * archlinux_::
+
+      pacman -S arandr
+
+  * Slackware using a `slackbuild by PhantomX`_::
+
+      wget http://cloud.github.com/downloads/PhantomX/slackbuilds/arandr-0.1.4.tar.bz2
+      tar xjf arandr-0.1.4.tar.bz2
+      cd arandr
+      ./arandr.SlackBuild 2>&1 | tee build.log
+
+  * Gentoo_::
+
+      emerge arandr
+
+  * Fedora_::
+
+      yum install arandr
+
+  * SuSE users can use the `X11:Utilities repository`_; ARandR can be found in the ``noarch`` directory of their distribution version.
+
+* From source:
+
+  * Fetch either
+
+    * the `latest release`_::
+
+        wget http://christian.amsuess.com/tools/arandr/files/arandr-0.1.9.tar.gz
+        tar xzf arandr-0.1.9.tar.gz
+        cd arandr-0.1.9
+
+    * or get it directly from GIT (`hosted on alioth`_)::
+
+        git clone git://anonscm.debian.org/arandr/arandr.git
+        cd arandr
+
+  * and start it using::
+
+      ./arandr
+
+  * or install it::
+
+      sudo ./setup.py install
+
+
+
+Dependencies
+------------
+
+* python_ 2
+* PyGTK_
+* xrandr_
+* docutils_ (>=0.6; for building the man page)
+
+
+
+Bugs / Communication
+--------------------
+
+* Versions before 0.1.7 depended on all modes to have a <width>x<height> name (see `debian bug #507521`_); if ARandR does not start up, please install the latest version. (On different bugtrackers, this is called the ValueError / "1080p" / "1024x768i" problem).
+* There exists a `list of bugs`_ (and feature requests and general wishlist). To report a problem or request a feature, you can `register on alioth`_ (the hosting service) and `report it`_.
+* For general discussion, you can `subscribe to the general discussion list`_ <arandr-users@lists.alioth.debian.org>.
+* To stay informed about new releases, `subscribe to the announce list`_ <arandr-announce@lists.alioth.debian.org>.
+
+Ongoing development
+-------------------
+
+An overhauled version of ARandR is in the works in the `verbose` and `gtk3` branches found in the git repository. Feature parity with the current releases has not been reached, but some interesting features are already implemented:
+
+* Parsing of the complete `--verbose` output, including properties
+* Setting refresh rates
+* Switch to Python 3 and GTK 3
+* Auto-discovery of DISPLAY in remote contexts 
+* Simulation and regression test infrastructure
+
+Features targetted for the first release from the new branch:
+
+* Setting properties
+* Parsing EDID information
+
+
+Similar projects
+----------------
+
+A number of other programs exist that cover similar functionality, often
+bundled with a particular desktop environment. Those I know of are, in
+alphabetical order:
+
+* Gnome's ``gnome-control-center display``, notable for its ``~/.config/monitors.xml`` `persistence <https://live.gnome.org/RandR#Storage_of_RANDR_configurations>`_
+* `grandr <ftp://ftp.freedesktop.org/pub/individual/app/>`_
+* `grandr-applet <http://dekorte.homeip.net/download/grandr-applet/>`_ (which seems not to be related to grandr)
+* KDE's RandR tool ``krandrtray``, notable for being the only listed program to be Qt based
+* LXDE's `LXRandR <http://wiki.lxde.org/en/LXRandR>`_, notable for storing configuration in ``~/.config/autostart/lxrandr-autostart``
+* `urandr <http://www.albertomilone.com/urandr.html>`_
+* `zarfy <http://sourceforge.net/projects/zarfy/>`_, notable for its nice use of a current screenshot
+* cglita wrote a patch that solved the ValueError / "1080p" problem. His patches went a little further and include more precise mode line selection; I keep it around, and you can try it like this::
+
+    git clone git://anonscm.debian.org/arandr/arandr.git -b cglita
+    cd arandr
+    ./arandr
+
+
+
+Contributing
+------------
+
+If you are fluent with languages not yet supported, you can add translations to ARandR using gettext_. An easy way to do this is `ARandR's page on hosted Weblate`_. (Transifex and Launchpad translations were discontinued for lack of SCM integration and associated problems with attributing contributions).
+
+If you want to contribute code, contact me_ directly or send bug reports, suggestions, patches and git pull requests to the bugtracker_ or the `arandr-users mailing list`_.
+
+If you want to support the project via flattr, you can `flattr this`_.
+
+
+About
+-----
+
+Copyright © chrysn_ <chrysn@fsfe.org> 2008–2016, Себастьян Gli ţa Κατινα 2011, Johannes Holmberg <johannes@update.uu.se> 2015 published under GPLv3_ or any later version.
+
+Inspired by the `dual head sketch`_ in the ThinkWiki_.
+
+Translations by
+
+* Algimantas Margevičius, Mantas Kriaučiūnas (Lithuanian)
+* Alireza Savand, reza khan (Persian)
+* Bakr Al-Tamimi, Mohammad Alhargan, aboodilankaboot (Arabic)
+* Balázs Úr, Tamás Nagy (Hungarian)
+* Belvar (Breton)
+* Bruno_Patri, Clément Démoulins, Tuux (French)
+* Carezero, ChuChangMing (Chinese (China))
+* Denis Jukni (Albanian)
+* Dimitris Giouroukis, Efstathios Iosifidis (Greek)
+* Fred Maranhão, Guilherme Souza Silva, Phantom X (Portuguese (Brazil))
+* HsH, Ivan Vantu5z, Vladimir (Russian)
+* Igor, Olexandr Nesterenko, Rax Garfield (Ukrainian)
+* Ingemar Karlsson (Swedish)
+* Joe Hansen, Sebastian Wahl (Danish)
+* Kristjan Räts (Estonian)
+* Lu Ca (Portuguese (Brazil), Sardinian)
+* Luca Vetturi, Quizzlo (Italian)
+* Luis García Sevillano, Ricardo A. Hermosilla Carrillo (Spanish)
+* Mehmet Gülmen (Turkish)
+* Michal Čihař (Czech)
+* Miguel Anxo Bouzada (Galician, Spanish)
+* ParkJS, cho bkwon, pCsOrI (Korean (Korea, Republic of))
+* Piotr Strebski, RooTer, agilob (Polish)
+* Semsudin Abdic (Bosnian)
+* Slavko (Slovak)
+* Slobodan Simić (Serbian)
+* chrysn (English, German)
+* el_libre, josep constanti (Catalan)
+* gundachandru (Kannada)
+* ikmaak, wimfeijen (Dutch)
+* o-157 (Japanese)
+* Себастьян Gli ţa Κατινα (Romanian)
+
+
+ .. _XRandR: http://www.x.org/wiki/Projects/XRandR
+ .. _xsetwacom: http://linuxwacom.sourceforge.net/index.php/howto/xsetwacom
+ .. _`latest release`: http://christian.amsuess.com/tools/arandr/files/arandr-0.1.9.tar.gz
+ .. _archlinux: http://www.archlinux.org/packages/community/any/arandr/
+ .. _chrysn: http://christian.amsuess.com
+ .. _GPLv3: http://www.gnu.org/licenses/gpl-3.0.txt
+ .. _`dual head sketch`: http://www.thinkwiki.org/wiki/Image:Intel-DualHead.png
+ .. _ThinkWiki: http://thinkwiki.org/
+ .. _`hosted on alioth`: https://alioth.debian.org/scm/browser.php?group_id=100834
+ .. _Debian: http://packages.debian.org/arandr
+ .. _Ubuntu: http://packages.ubuntu.com/arandr
+ .. _gettext: http://www.gnu.org/software/gettext/
+ .. _`ARandR's page on hosted Weblate`: http://hosted.weblate.org/projects/arandr/translations/
+ .. _me: mailto:chrysn@fsfe.org
+ .. _bugtracker: https://alioth.debian.org/tracker/?atid=413123&group_id=100834
+ .. _`arandr-users mailing list`: https://lists.alioth.debian.org/mailman/listinfo/arandr-users
+ .. _python: http://www.python.org/
+ .. _PyGTK: http://www.pygtk.org/
+ .. _`slackbuild by PhantomX`: http://github.com/PhantomX/slackbuilds/tree/master/arandr/
+ .. _Gentoo: http://packages.gentoo.org/package/x11-misc/arandr
+ .. _Fedora: https://apps.fedoraproject.org/packages/arandr
+ .. _docutils: http://docutils.sourceforge.net/
+ .. _`debian bug #507521`: http://bugs.debian.org/507521
+ .. _`X11:Utilities repository`: http://download.opensuse.org/repositories/X11:/Utilities/
+ .. _`list of bugs`: https://alioth.debian.org/tracker/?atid=413123&group_id=100834
+ .. _`register on alioth`: https://alioth.debian.org/account/register.php
+ .. _`report it`: https://alioth.debian.org/tracker/?func=add&group_id=100834&atid=413123
+ .. _`subscribe to the general discussion list`: https://lists.alioth.debian.org/mailman/listinfo/arandr-users
+ .. _`subscribe to the announce list`: https://lists.alioth.debian.org/mailman/listinfo/arandr-announce
+ .. _`flattr this`: https://flattr.com/submit/auto?user_id=chrysn&url=http%3A%2F%2Fchristian.amsuess.com%2Ftools%2Farandr%2F
