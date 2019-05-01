@@ -253,6 +253,7 @@ setup(name = PACKAGENAME,
             },
         data_files = [
             ('share/applications', ['data/arandr.desktop']), # FIXME: use desktop-file-install?
+            ('lib/arandr', ['data/pwdarandr.sh']),
             ('share/man/man1', ['build/arandr.1.gz', 'build/unxrandr.1.gz']),
             ],
         scripts = ['arandr', 'unxrandr'],
