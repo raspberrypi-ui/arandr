@@ -172,10 +172,6 @@ class Application(object):
 
         self.gconf = None
 
-        current = screenlayout.xrandr.XRandR()
-        current.load_from_x()
-        self.original = current.save_to_shellscript_string()
-
 
     #################### actions ####################
 
@@ -217,7 +213,7 @@ class Application(object):
         widget.destroy ()
 
     def show_confirm (self):
-        self.conf = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_INFO, gtk.BUTTONS_OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting."))
+        self.conf = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_INFO, gtk.BUTTONS_OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting. Reverting in 10 seconds..."))
         self.revert_timer = gtk.timeout_add (10000, self.revert_timeout)
         self.conf.connect ("response", self.conf_response)
         self.conf.run ()
@@ -228,6 +224,9 @@ class Application(object):
             return
 
         try:
+            current = screenlayout.xrandr.XRandR()
+            current.load_from_x()
+            self.original = current.save_to_shellscript_string()
             self.widget.save_to_x()
             self.show_confirm()
 
