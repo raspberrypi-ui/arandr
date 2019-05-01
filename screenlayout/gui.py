@@ -21,6 +21,7 @@ import optparse
 import inspect
 
 import gtk
+import screenlayout.xrandr
 
 from . import widget
 from .metacity import show_keybinder
@@ -78,6 +79,7 @@ class Application(object):
                 <menuitem action="SaveAs" />
                 <separator />
                 <menuitem action="Apply" />
+                <menuitem action="Revert" />
                 <menuitem action="LayoutSettings" />
                 <separator />
                 <menuitem action="Quit" />
@@ -120,6 +122,7 @@ class Application(object):
             ("SaveAs", gtk.STOCK_SAVE_AS, None, None, None, self.do_save_as),
 
             ("Apply", gtk.STOCK_APPLY, None, '<Control>Return', None, self.do_apply),
+            ("Revert", gtk.STOCK_UNDO, None, None, None, self.do_revert),
             ("LayoutSettings", gtk.STOCK_PROPERTIES, None, '<Alt>Return', None, self.do_open_properties),
 
             ("Quit", gtk.STOCK_QUIT, None, None, None, gtk.main_quit),
@@ -177,6 +180,11 @@ class Application(object):
 
         self.gconf = None
 
+        current = screenlayout.xrandr.XRandR()
+        current.load_from_x()
+        self.original = current.save_to_shellscript_string()
+
+
     #################### actions ####################
 
     @actioncallback
@@ -218,6 +226,17 @@ class Application(object):
             d.run()
             d.destroy()
 
+    @actioncallback
+    def do_revert(self):
+        if self.widget.abort_if_unsafe():
+            return
+
+        try:
+            self.widget.revert_to (self.original)
+        except Exception, e:
+            d = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, _("XRandR failed:\n%s")%e)
+            d.run()
+            d.destroy()
     @actioncallback
     def do_new(self):
         self.filetemplate = self.widget.load_from_x()

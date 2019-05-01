@@ -103,6 +103,10 @@ class ARandRWidget(gtk.DrawingArea):
             self._force_repaint()
         self.emit('changed')
 
+    def revert_to(self, orig):
+        self._xrandr.load_from_string (orig)
+        self.save_to_x()
+
     def save_to_x(self):
         self._xrandr.save_to_x()
         data = self._xrandr.save_to_shellscript_string(None, None)
