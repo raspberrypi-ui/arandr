@@ -73,15 +73,7 @@ class Application(object):
     uixml = """
     <ui>
         <menubar name="MenuBar">
-            <menu action="Layout">
-                <menuitem action="New" />
-                <menuitem action="Open" />
-                <menuitem action="SaveAs" />
-                <separator />
-                <menuitem action="Apply" />
-                <menuitem action="Revert" />
-                <menuitem action="LayoutSettings" />
-                <separator />
+            <menu action="File">
                 <menuitem action="Quit" />
             </menu>
             <menu action="View">
@@ -89,11 +81,13 @@ class Application(object):
                 <menuitem action="Zoom8" />
                 <menuitem action="Zoom16" />
             </menu>
-            <menu action="Outputs" name="Outputs">
-                <menuitem action="OutputsDummy" />
-            </menu>
-            <menu action="System">
-                <menuitem action="Metacity" />
+            <menu action="Configure">
+                <menuitem action="Apply" />
+                <menuitem action="Revert" />
+                <separator />
+                <menu action="Outputs" name="Outputs">
+                    <menuitem action="OutputsDummy" />
+                </menu>
             </menu>
             <menu action="Help">
                 <menuitem action="About" />
@@ -101,10 +95,7 @@ class Application(object):
         </menubar>
         <toolbar name="ToolBar">
             <toolitem action="Apply" />
-            <separator />
-            <toolitem action="New" />
-            <toolitem action="Open" />
-            <toolitem action="SaveAs" />
+            <toolitem action="Revert" />
         </toolbar>
     </ui>
     """
@@ -116,7 +107,7 @@ class Application(object):
         # actions
         actiongroup = gtk.ActionGroup('default')
         actiongroup.add_actions([
-            ("Layout", None, _("_Layout")),
+            ("File", None, _("_File")),
             ("New", gtk.STOCK_NEW, None, None, None, self.do_new),
             ("Open", gtk.STOCK_OPEN, None, None, None, self.do_open),
             ("SaveAs", gtk.STOCK_SAVE_AS, None, None, None, self.do_save_as),
@@ -130,7 +121,8 @@ class Application(object):
 
             ("View", None, _("_View")),
 
-            ("Outputs", None, _("_Outputs")),
+            ("Configure", None, _("_Configure")),
+            ("Outputs", None, _("_Screens")),
             ("OutputsDummy", None, _("Dummy")),
 
             ("System", None, _("_System")),
@@ -292,7 +284,7 @@ class Application(object):
         self._populate_outputs()
 
     def _populate_outputs(self):
-        w = self.uimanager.get_widget('/MenuBar/Outputs')
+        w = self.uimanager.get_widget('/MenuBar/Configure/Outputs')
         w.props.submenu = self.widget.contextmenu()
 
     #################### metacity ####################
