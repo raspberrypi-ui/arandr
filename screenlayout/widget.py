@@ -105,6 +105,10 @@ class ARandRWidget(gtk.DrawingArea):
 
     def save_to_x(self):
         self._xrandr.save_to_x()
+        data = self._xrandr.save_to_shellscript_string(None, None)
+        file = open ("/etc/profile.d/xrandr.sh", "w")
+        file.write (data)
+        file.close
         self.load_from_x()
 
     def save_to_file(self, file, template=None, additional=None):
