@@ -206,6 +206,22 @@ class Application(object):
         d.run()
         d.destroy()
 
+    def revert_timeout (self):
+        self.do_revert ()
+        self.conf.destroy ()
+
+    def conf_response (self, widget, response_id):
+        if response_id == gtk.RESPONSE_CANCEL:
+            self.do_revert ()
+        gtk.timeout_remove (self.revert_timer)
+        widget.destroy ()
+
+    def show_confirm (self):
+        self.conf = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_INFO, gtk.BUTTONS_OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting."))
+        self.revert_timer = gtk.timeout_add (10000, self.revert_timeout)
+        self.conf.connect ("response", self.conf_response)
+        self.conf.run ()
+
     @actioncallback
     def do_apply(self):
         if self.widget.abort_if_unsafe():
@@ -213,6 +229,8 @@ class Application(object):
 
         try:
             self.widget.save_to_x()
+            self.show_confirm()
+
         except Exception, e:
             d = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, _("XRandR failed:\n%s")%e)
             d.run()
