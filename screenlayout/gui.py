@@ -76,11 +76,6 @@ class Application(object):
             <menu action="File">
                 <menuitem action="Quit" />
             </menu>
-            <menu action="View">
-                <menuitem action="Zoom4" />
-                <menuitem action="Zoom8" />
-                <menuitem action="Zoom16" />
-            </menu>
             <menu action="Configure">
                 <menuitem action="Apply" />
                 <menuitem action="Revert" />
@@ -88,6 +83,11 @@ class Application(object):
                 <menu action="Outputs" name="Outputs">
                     <menuitem action="OutputsDummy" />
                 </menu>
+            </menu>
+            <menu action="View">
+                <menuitem action="Zoom4" />
+                <menuitem action="Zoom8" />
+                <menuitem action="Zoom16" />
             </menu>
             <menu action="Help">
                 <menuitem action="About" />
