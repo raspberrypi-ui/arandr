@@ -149,7 +149,7 @@ class Application(object):
         self.uimanager.add_ui_from_string(self.uixml)
 
         # widget
-        self.widget = widget.ARandRWidget(display=randr_display, force_version=force_version)
+        self.widget = widget.ARandRWidget(display=randr_display, force_version=force_version, gui=self)
         if file is None:
             self.filetemplate = self.widget.load_from_x()
         else:
@@ -171,6 +171,7 @@ class Application(object):
         window.show_all()
 
         self.gconf = None
+        self.enable_revert (False)
 
 
     #################### actions ####################
@@ -201,6 +202,11 @@ class Application(object):
 
         d.run()
         d.destroy()
+
+    def enable_revert (self, state):
+        ag = self.uimanager.get_action_groups()
+        rev = ag[0].get_action ("Revert")
+        rev.set_sensitive (state)
 
     def revert_timeout (self):
         self.do_revert ()
@@ -246,6 +252,7 @@ class Application(object):
             d = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, _("XRandR failed:\n%s")%e)
             d.run()
             d.destroy()
+
     @actioncallback
     def do_new(self):
         self.filetemplate = self.widget.load_from_x()

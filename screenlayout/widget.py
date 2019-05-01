@@ -33,7 +33,7 @@ class ARandRWidget(gtk.DrawingArea):
             'changed':(gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
             }
 
-    def __init__(self, factor=8, display=None, force_version=False):
+    def __init__(self, factor=8, display=None, force_version=False, gui=None):
         super(ARandRWidget, self).__init__()
 
         self._factor = factor
@@ -46,6 +46,7 @@ class ARandRWidget(gtk.DrawingArea):
         self.setup_draganddrop()
 
         self._xrandr = XRandR(display=display, force_version=force_version)
+        self.gui = gui
 
     #################### widget features ####################
 
@@ -106,9 +107,11 @@ class ARandRWidget(gtk.DrawingArea):
     def revert_to(self, orig):
         self._xrandr.load_from_string (orig)
         self.save_to_x()
+        self.gui.enable_revert (False)
 
     def save_to_x(self):
         self._xrandr.save_to_x()
+        self.gui.enable_revert (True)
         data = self._xrandr.save_to_shellscript_string(None, None)
         file = open ("/usr/share/dispsetup.sh", "w")
         file.write (data)
