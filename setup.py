@@ -255,6 +255,7 @@ setup(name = PACKAGENAME,
             ('share/applications', ['data/arandr.desktop']), # FIXME: use desktop-file-install?
             ('lib/arandr', ['data/pwdarandr.sh']),
             ('share', ['data/dispsetup.sh']),
+            ('/etc/xdg/autostart', ['data/arandr-autostart.desktop']),
             ('share/man/man1', ['build/arandr.1.gz', 'build/unxrandr.1.gz']),
             ],
         scripts = ['arandr', 'unxrandr'],
