@@ -1,3 +1,9 @@
+arandr (0.1.9-2+rpt1) unstable; urgency=medium
+
+  * Various UI tweaks
+
+ -- Simon Long <simon@raspberrypi.org>  Wed, 01 May 2019 13:01:20 +0100
+
 arandr (0.1.9-2) unstable; urgency=medium
 
   * Change debhelper compat to 10
