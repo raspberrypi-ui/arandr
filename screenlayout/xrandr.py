@@ -31,7 +31,7 @@ class Feature(object):
     PRIMARY = 1
 
 class XRandR(object):
-    DEFAULTTEMPLATE = [SHELLSHEBANG, '%(xrandr)s']
+    DEFAULTTEMPLATE = ['%(xrandr)s']
 
     def __init__(self, display=None, force_version=False):
         """Create proxy object and check for xrandr at `display`. Fail with

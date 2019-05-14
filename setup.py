@@ -252,7 +252,8 @@ setup(name = PACKAGENAME,
             'update_translator_credits': update_translator_credits,
             },
         data_files = [
-            ('share/applications', ['data/arandr.desktop']), # FIXME: use desktop-file-install?
+            ('share/applications', ['data/arandr.desktop']),
+            ('share/fkms/applications', ['data/fkms/arandr.desktop']),
             ('lib/arandr', ['data/pwdarandr.sh']),
             ('share', ['data/dispsetup.sh']),
             ('/etc/xdg/autostart', ['data/arandr-autostart.desktop']),

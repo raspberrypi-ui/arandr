@@ -27,6 +27,8 @@ from .snap import Snap
 import gettext
 gettext.install('arandr')
 
+SHELLSHEBANG='#!/bin/sh'
+
 class ARandRWidget(gtk.DrawingArea):
     __gsignals__ = {
             'expose-event':'override', # FIXME: still needed?
@@ -114,7 +116,10 @@ class ARandRWidget(gtk.DrawingArea):
         self.gui.enable_revert (True)
         data = self._xrandr.save_to_shellscript_string(None, None)
         file = open ("/usr/share/dispsetup.sh", "w")
+        file.write (SHELLSHEBANG)
+        file.write ("\nif grep -q okay /proc/device-tree/soc/v3d@7ec00000/status 2> /dev/null || grep -q okay /proc/device-tree/soc/firmwarekms@7e600000/status 2> /dev/null ; then\n\t")
         file.write (data)
+        file.write ("fi\nexit 0");
         file.close
         self.load_from_x()
 
