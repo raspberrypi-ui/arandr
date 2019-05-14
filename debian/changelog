@@ -1,3 +1,9 @@
+arandr (0.1.9-2+rpt2) unstable; urgency=medium
+
+  * Only run xrandr commands if FKMS is in use
+
+ -- Simon Long <simon@raspberrypi.org>  Tue, 14 May 2019 14:12:42 +0100
+
 arandr (0.1.9-2+rpt1) unstable; urgency=medium
 
   * Various UI tweaks
