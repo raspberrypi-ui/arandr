@@ -1,3 +1,9 @@
+arandr (0.1.9-2+rpt3) unstable; urgency=medium
+
+  * Fix revert behaviour; escape key now reverts
+
+ -- Simon Long <simon@raspberrypi.org>  Thu, 16 May 2019 07:43:54 +0100
+
 arandr (0.1.9-2+rpt2) unstable; urgency=medium
 
   * Only run xrandr commands if FKMS is in use
