@@ -117,7 +117,7 @@ class ARandRWidget(gtk.DrawingArea):
         data = self._xrandr.save_to_shellscript_string(None, None)
         file = open ("/usr/share/dispsetup.sh", "w")
         file.write (SHELLSHEBANG)
-        file.write ("\nif grep -q okay /proc/device-tree/soc/v3d@7ec00000/status 2> /dev/null || grep -q okay /proc/device-tree/soc/firmwarekms@7e600000/status 2> /dev/null ; then\n\t")
+        file.write ("\nif grep -q okay /proc/device-tree/soc/v3d@7ec00000/status 2> /dev/null || grep -q okay /proc/device-tree/soc/firmwarekms@7e600000/status 2> /dev/null ; then\n")
         file.write (data)
         file.write ("fi\nexit 0");
         file.close

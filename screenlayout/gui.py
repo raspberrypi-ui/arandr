@@ -213,7 +213,7 @@ class Application(object):
         self.conf.destroy ()
 
     def conf_response (self, widget, response_id):
-        if response_id == gtk.RESPONSE_CANCEL:
+        if response_id == gtk.RESPONSE_CANCEL or response_id == gtk.RESPONSE_DELETE_EVENT:
             self.do_revert ()
         gtk.timeout_remove (self.revert_timer)
         widget.destroy ()
