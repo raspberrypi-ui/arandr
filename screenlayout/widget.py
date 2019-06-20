@@ -115,11 +115,14 @@ class ARandRWidget(gtk.DrawingArea):
         self._xrandr.save_to_x()
         self.gui.enable_revert (True)
         data = self._xrandr.save_to_shellscript_string(None, None)
+        cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
         file = open ("/usr/share/dispsetup.sh", "w")
         file.write (SHELLSHEBANG)
-        file.write ("\nif grep -q okay /proc/device-tree/soc/v3d@7ec00000/status 2> /dev/null || grep -q okay /proc/device-tree/soc/firmwarekms@7e600000/status 2> /dev/null ; then\n")
-        file.write (data)
-        file.write ("fi\nexit 0");
+        file.write ("\nif grep -q okay /proc/device-tree/soc/v3d@7ec00000/status 2> /dev/null || grep -q okay /proc/device-tree/soc/firmwarekms@7e600000/status 2> /dev/null ; then\nif ")
+        file.write (cdata)
+        file.write (" --dryrun ; then \n");
+        file.write (cdata)
+        file.write ("\nfi\nfi\nexit 0");
         file.close
         self.load_from_x()
 
