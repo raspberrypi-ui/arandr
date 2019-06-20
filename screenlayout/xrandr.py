@@ -175,8 +175,9 @@ class XRandR(object):
                     o.rotations.add(r)
 
             currentname = None
-            for d, w, h in details:
+            for d, w, h, f in details:
                 n, m = d[0:2]
+                n = n + f
                 k = m.strip("()")
                 try:
                     r = Size([int(w), int(h)])
@@ -211,9 +212,14 @@ class XRandR(object):
                 continue
             elif l.startswith(2*' '): # [mode, width, height]
                 l = l.strip()
-                if reduce(bool.__or__, [l.startswith(x+':') for x in "hv"]):
+                if l.startswith('h:'):
                     l = l[-len(l):l.index(" start")-len(l)]
                     items[-1][1][-1].append(l[l.rindex(' '):])
+                elif l.startswith('v:'):
+                    l1 = l[-len(l):l.index(" start")-len(l)]
+                    items[-1][1][-1].append(l1[l1.rindex(' '):])
+                    l1 = l[-len(l):l.index("Hz")-len(l)]
+                    items[-1][1][-1].append(l1[l1.rindex(' '):])
                 else: # mode
                     items[-1][1].append([l.split()])
             else:
@@ -321,8 +327,11 @@ class XRandR(object):
                     if Feature.PRIMARY in self._xrandr.features:
                         if o.primary:
                             args.append("--primary")
+                    modres=str(o.mode.name).split(" ")
                     args.append("--mode")
-                    args.append(str(o.mode.name))
+                    args.append(str(modres[0]))
+                    args.append("--rate")
+                    args.append(str(modres[1]))
                     args.append("--pos")
                     args.append(str(o.position))
                     args.append("--rotate")
