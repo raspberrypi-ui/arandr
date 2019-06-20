@@ -111,14 +111,27 @@ class XRandR(object):
                 if len(oa)%2 != 0:
                     raise FileSyntaxError()
                 parts = [(oa[2*i],oa[2*i+1]) for i in range(len(oa)//2)]
+                mode = ''
+                rate = ''
                 for p in parts:
                     if p[0] == '--mode':
-                        for namedmode in os.modes:
-                            if namedmode.name == p[1]:
-                                o.mode = namedmode
-                                break
-                        else:
-                            raise FileLoadError("Not a known mode: %s"%p[1])
+                        mode = p[1]
+                        if mode and rate:
+                            for namedmode in os.modes:
+                                if namedmode.name == mode + ' ' + rate:
+                                    o.mode = namedmode
+                                    break
+                            else:
+                                raise FileLoadError("Not a known mode: %s"%p[1])
+                    elif p[0] == '--rate':
+                        rate = p[1]
+                        if mode and rate:
+                            for namedmode in os.modes:
+                                if namedmode.name == mode + ' ' + rate:
+                                    o.mode = namedmode
+                                    break
+                            else:
+                                raise FileLoadError("Not a known mode: %s"%p[1])
                     elif p[0] == '--pos':
                         o.position = Position(p[1])
                     elif p[0] == '--rotate':
