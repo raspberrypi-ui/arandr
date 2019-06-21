@@ -118,20 +118,20 @@ class XRandR(object):
                         mode = p[1]
                         if mode and rate:
                             for namedmode in os.modes:
-                                if namedmode.name == mode + ' ' + rate:
+                                if namedmode.name == mode + ' ' + rate + 'Hz':
                                     o.mode = namedmode
                                     break
                             else:
-                                raise FileLoadError("Not a known mode: %s"%p[1])
+                                raise FileLoadError("Not a known mode: %s" % (mode + ' ' + rate + 'Hz'))
                     elif p[0] == '--rate':
                         rate = p[1]
                         if mode and rate:
                             for namedmode in os.modes:
-                                if namedmode.name == mode + ' ' + rate:
+                                if namedmode.name == mode + ' ' + rate + 'Hz':
                                     o.mode = namedmode
                                     break
                             else:
-                                raise FileLoadError("Not a known mode: %s"%p[1])
+                                raise FileLoadError("Not a known mode: %s" % (mode + ' ' + rate + 'Hz'))
                     elif p[0] == '--pos':
                         o.position = Position(p[1])
                     elif p[0] == '--rotate':
@@ -232,7 +232,7 @@ class XRandR(object):
                     l1 = l[-len(l):l.index(" start")-len(l)]
                     items[-1][1][-1].append(l1[l1.rindex(' '):])
                     l1 = l[-len(l):l.index("Hz")-len(l)]
-                    items[-1][1][-1].append(l1[l1.rindex(' '):])
+                    items[-1][1][-1].append(l1[l1.rindex(' '):]+'Hz')
                 else: # mode
                     items[-1][1].append([l.split()])
             else:
@@ -344,7 +344,7 @@ class XRandR(object):
                     args.append("--mode")
                     args.append(str(modres[0]))
                     args.append("--rate")
-                    args.append(str(modres[1]))
+                    args.append(str(modres[1]).replace('Hz',''))
                     args.append("--pos")
                     args.append(str(o.position))
                     args.append("--rotate")
