@@ -123,7 +123,7 @@ class ARandRWidget(gtk.DrawingArea):
         file.write (" --dryrun ; then \n");
         file.write (cdata)
         file.write ("\nfi\nfi\nexit 0");
-        file.close
+        file.close ()
         self.load_from_x()
 
     def save_to_file(self, file, template=None, additional=None):
