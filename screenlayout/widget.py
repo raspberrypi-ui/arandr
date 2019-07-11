@@ -356,18 +356,38 @@ class ARandRWidget(gtk.DrawingArea):
                 primary.connect('activate', lambda menuitem: self.set_primary(on, menuitem.props.active))
                 m.add(primary)
 
+            cur = oc.mode.name.split()
             res_m = gtk.Menu()
+            inmenu = []
             for r in os.modes:
-                i = gtk.CheckMenuItem(str(r))
-                i.props.draw_as_radio = True
-                i.props.active = (oc.mode.name == r.name)
-                def _res_set(menuitem, on, r):
-                    try:
-                        self.set_resolution(on, r)
-                    except InadequateConfiguration, e:
-                        self.error_message(_("Setting this resolution is not possible here: %s")%e.message)
-                i.connect('activate', _res_set, on, r)
-                res_m.add(i)
+                ms = r.name.split()
+                if not ms[0] in inmenu:
+                    inmenu.append(ms[0])
+                    i = gtk.CheckMenuItem(str(ms[0]))
+                    i.props.draw_as_radio = True
+                    i.props.active = (cur[0] == ms[0])
+                    def _res_set(menuitem, on, r):
+                        try:
+                            self.set_resolution(on, r)
+                        except InadequateConfiguration, e:
+                            self.error_message(_("Setting this resolution is not possible here: %s")%e.message)
+                    i.connect('activate', _res_set, on, r)
+                    res_m.add(i)
+
+            ref_m = gtk.Menu()
+            for r in os.modes:
+                ms = r.name.split()
+                if cur[0] == ms[0]:
+                    i = gtk.CheckMenuItem(str(ms[1]))
+                    i.props.draw_as_radio = True
+                    i.props.active = (cur[1] == ms[1])
+                    def _ref_set(menuitem, on, r):
+                        try:
+                            self.set_resolution(on, r)
+                        except InadequateConfiguration, e:
+                            self.error_message(_("Setting this resolution is not possible here: %s")%e.message)
+                    i.connect('activate', _ref_set, on, r)
+                    ref_m.add(i)
 
             or_m = gtk.Menu()
             for r in ROTATIONS:
@@ -386,10 +406,13 @@ class ARandRWidget(gtk.DrawingArea):
 
             res_i = gtk.MenuItem(_("Resolution"))
             res_i.props.submenu = res_m
+            ref_i = gtk.MenuItem(_("Frequency"))
+            ref_i.props.submenu = ref_m
             or_i = gtk.MenuItem(_("Orientation"))
             or_i.props.submenu = or_m
 
             m.add(res_i)
+            m.add(ref_i)
             m.add(or_i)
 
         m.show_all()
