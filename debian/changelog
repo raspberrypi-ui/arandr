@@ -1,3 +1,22 @@
+arandr (0.1.9-2+rpt6) buster; urgency=medium
+
+  * Separate out refresh rate into separate menu
+
+ -- Simon Long <simon@raspberrypi.org>  Thu, 11 Jul 2019 09:45:44 +0100
+
+arandr (0.1.9-2+rpt5) buster; urgency=medium
+
+  * Fix file close bug
+
+ -- Simon Long <simon@raspberrypi.org>  Mon, 01 Jul 2019 09:22:34 +0100
+
+arandr (0.1.9-2+rpt4) unstable; urgency=medium
+
+  * Sanity check on saved config before loading on boot
+  * Allow setting of display refresh rate
+
+ -- Simon Long <simon@raspberrypi.org>  Fri, 21 Jun 2019 12:34:31 +0100
+
 arandr (0.1.9-2+rpt3) unstable; urgency=medium
 
   * Fix revert behaviour; escape key now reverts
