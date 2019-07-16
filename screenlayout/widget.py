@@ -253,10 +253,10 @@ class ARandRWidget(gtk.DrawingArea):
             # create text
             layout = cr.create_layout()
             layout.set_font_description(newdescr)
-            if o.primary:
-                attrs = pango.AttrList()
-                attrs.insert(pango.AttrUnderline(pango.UNDERLINE_SINGLE, end_index=-1))
-                layout.set_attributes(attrs)
+            #if o.primary:
+            #    attrs = pango.AttrList()
+            #    attrs.insert(pango.AttrUnderline(pango.UNDERLINE_SINGLE, end_index=-1))
+            #    layout.set_attributes(attrs)
 
             layout.set_text(on)
 
@@ -325,7 +325,9 @@ class ARandRWidget(gtk.DrawingArea):
 
     def contextmenu(self):
         m = gtk.Menu()
-        for on in self._xrandr.outputs:
+        sort_outs = self._xrandr.outputs
+        sort_outs.sort()
+        for on in sort_outs:
             oc = self._xrandr.configuration.outputs[on]
             os = self._xrandr.state.outputs[on]
 
@@ -343,18 +345,18 @@ class ARandRWidget(gtk.DrawingArea):
         oc = self._xrandr.configuration.outputs[on]
         os = self._xrandr.state.outputs[on]
 
-        enabled = gtk.CheckMenuItem(_("Active"))
-        enabled.props.active = oc.active
-        enabled.connect('activate', lambda menuitem: self.set_active(on, menuitem.props.active))
+        #enabled = gtk.CheckMenuItem(_("Active"))
+        #enabled.props.active = oc.active
+        #enabled.connect('activate', lambda menuitem: self.set_active(on, menuitem.props.active))
 
-        m.add(enabled)
+        #m.add(enabled)
 
         if oc.active:
-            if Feature.PRIMARY in self._xrandr.features:
-                primary = gtk.CheckMenuItem(_("Primary"))
-                primary.props.active = oc.primary
-                primary.connect('activate', lambda menuitem: self.set_primary(on, menuitem.props.active))
-                m.add(primary)
+            #if Feature.PRIMARY in self._xrandr.features:
+            #    primary = gtk.CheckMenuItem(_("Primary"))
+            #    primary.props.active = oc.primary
+            #    primary.connect('activate', lambda menuitem: self.set_primary(on, menuitem.props.active))
+            #    m.add(primary)
 
             cur = oc.mode.name.split()
             res_m = gtk.Menu()
