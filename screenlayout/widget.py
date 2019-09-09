@@ -118,7 +118,7 @@ class ARandRWidget(gtk.DrawingArea):
         cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
         file = open ("/usr/share/dispsetup.sh", "w")
         file.write (SHELLSHEBANG)
-        file.write ("\nif grep -q okay /proc/device-tree/soc/v3d@7ec00000/status 2> /dev/null || grep -q okay /proc/device-tree/soc/firmwarekms@7e600000/status 2> /dev/null ; then\nif ")
+        file.write ("\nif ! grep -q 'Raspberry Pi' /proc/device-tree/model || (grep -q okay /proc/device-tree/soc/v3d@7ec00000/status 2> /dev/null || grep -q okay /proc/device-tree/soc/firmwarekms@7e600000/status 2> /dev/null) ; then\nif ")
         file.write (cdata)
         file.write (" --dryrun ; then \n");
         file.write (cdata)
