@@ -151,7 +151,8 @@ class ARandRWidget(gtk.DrawingArea):
             file.write ("if xinput | grep -q \"" + tsdriver + "\" ; then " + tscmd + " ; fi")
             file.close ()
         else:
-            os.remove ("/usr/share/tssetup.sh")
+            if os.path.isfile ("/usr/share/tssetup.sh"):
+                os.remove ("/usr/share/tssetup.sh")
 
     def _output_ts(self, cmd):
         p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self._xrandr.environ)
