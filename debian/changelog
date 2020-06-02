@@ -1,3 +1,9 @@
+arandr (0.1.9-2+rpt7) buster; urgency=medium
+
+  * Modify KMS check to include full KMS on Pi 4
+
+ -- Simon Long <simon@raspberrypi.com>  Tue, 02 Jun 2020 10:42:08 +0100
+
 arandr (0.1.9-2+rpt6) buster; urgency=medium
 
   * Separate out refresh rate into separate menu
