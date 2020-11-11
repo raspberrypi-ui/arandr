@@ -103,6 +103,7 @@ class Application(object):
     def __init__(self, file=None, randr_display=None, force_version=False):
         self.window = window = gtk.Window()
         window.props.title = "Screen Layout Editor"
+        window.set_icon_name('computer')
 
         # actions
         actiongroup = gtk.ActionGroup('default')
