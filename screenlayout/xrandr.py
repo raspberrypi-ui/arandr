@@ -161,7 +161,6 @@ class XRandR:
                         raise FileSyntaxError()
                 output.active = True
 
-
     def load_from_x(self):  # FIXME -- use a library
         self.configuration = self.Configuration(self)
         self.state = self.State()
@@ -241,6 +240,7 @@ class XRandR:
                 else:
                     # the mode is really new
                     output.modes.append(NamedSize(size, name=name))
+
             self.state.outputs[output.name] = output
             self.configuration.outputs[output.name] = self.configuration.OutputConfiguration(
                 active, primary, geometry, current_rotation, currentname
