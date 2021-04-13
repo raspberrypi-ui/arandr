@@ -1,0 +1,130 @@
+Version 0.1.10
+* Ported to Python 3 and PyGObject (by actionless)
+* Metacity keybindings removed
+* New translations
+  - Finnish
+  - Hebrew
+  - Indonesian
+  - Kurdish Sorani
+  - Norwegian Bokmål
+* Updated translations
+  - Breton
+  - Czech
+  - French
+  - Galego
+  - Galician
+  - Greek
+  - Japanese
+  - Kannada
+  - Lithuanian
+  - Romanian
+  - Sardinian
+  - Slovak
+  - Swedish
+  - Turkish
+  - Chinese (Traditional)
+
+Version 0.1.9
+* Support xrandr 1.5.0
+* New translations:
+  - Albanian
+* Updated translations
+
+Version 0.1.8
+* Allow setting the primary output
+* New translations:
+  - Sardinian (by Lu Ca)
+  - Estonian (by Kristjan Räts)
+  - Czech (by Michal Čihař)
+* Updated translations
+  - Brazilian (by Fred Maranhão)
+  - Russian (by Ivan Vantu5z)
+  - French (by Tuux)
+  - Polish (by Piotr Strebski)
+  - Persian (by reza khan)
+  - Ukrainian (by Igor)
+  - Hungarian (by Balázs Úr)
+  - Greek (by Efstathios Iosifidis)
+  - Korean (by cho bkwon)
+
+Version 0.1.7.1
+* Build even with no translations present
+* Fix AttributeError when modes with same name have different resolutions
+* Show the entire output submenu as disabled instead of the "Active" checkbox
+
+Version 0.1.7
+* Fix the 'primary' issue
+  - ignores the primary keyword
+  - makes ARandR compatible with xrandr 1.4.0
+* Merged parts of the cglita branch
+  - solves ValueError / "1080p" issue
+* New translations:
+  - Ukrainian (by Rax Garfield)
+  - Hungarian (by Tamás Nagy)
+  - Greek (by Dimitris Giouroukis)
+  - Korean (by ParkJS)
+* Updated translations:
+  - Lithuanian (by Mantas Kriaučiūnas)
+
+Version 0.1.6
+* New translations:
+  - Breton (by Belvar)
+  - Lithunian (by Algimantas Margevičius)
+  - Galician (by Miguel Anxo Bouzada)
+  - Japanese (by o-157)
+  - Swedish (by Ingemar Karlsson)
+  - Bosnian (by Semsudin Abdic)
+* Updated translations:
+  - Persian (by Alireza Savand)
+  - Spanish (by Miguel Anxo Bouzada)
+* Minor bugfixes
+
+Version 0.1.5
+* New unxrandr tool
+* New translations:
+  - Dutch (by wimfeijen)
+  - Romanian (by sjb and Себастьян Gli ţa Κατινα)
+  - Slovak (by Slavko)
+  - Persian (by Alireza Savand)
+* Updated translations:
+  - French (by Bruno Patri)
+* Added copyright headers to all source files
+
+Version 0.1.4
+* This is a bugfix / translation update release
+* Fix for "unknown connection" bug
+* New translations:
+  - Russian (by HsH)
+  - French (by Clément Démoulins)
+  - Polish (by RooTer)
+  - Arabic (by Mohammad Alhargan)
+  - Turkish (by Mehmet Gülmen)
+  - Spanish (by Ricardo A. Hermosilla Carrillo)
+  - Catalan (by el_libre)
+  - Chinese (by Carezero)
+* Translation updates:
+  - Danish
+  - Brazilian
+  - Arabic (by aboodilankaboot)
+
+Version 0.1.3
+* Prevent too large window size requests
+* New translations:
+  - Italian (by Quizzlo)
+  - Brazilian (by Phantom X)
+  - Danish (by Joe Hansen)
+  - Kannada (by gundachandru)
+* Better translation infrastructure
+  - Translations now hosted on https://transifex.net/projects/p/arandr/
+* man page enhancements
+  - man page generation now depends on docutils (>=0.6)
+* New source code repository at http://gitorious.org/arandr/arandr
+
+Version 0.1.2
+* Accept xrandr versions newer than 1.2
+
+Version 0.1.1
+* Add support for --randr-display
+
+Version 0.1
+* Initial release
