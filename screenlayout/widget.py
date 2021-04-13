@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 import os
+import subprocess
+import shlex
 import stat
 
 import gi
@@ -32,6 +34,7 @@ from .xrandr import XRandR, Feature
 from .auxiliary import Position, NORMAL, ROTATIONS, InadequateConfiguration
 from .i18n import _
 
+SHELLSHEBANG='#!/bin/sh'
 
 class ARandRWidget(Gtk.DrawingArea):
 
@@ -46,7 +49,7 @@ class ARandRWidget(Gtk.DrawingArea):
         'changed': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
     }
 
-    def __init__(self, window, factor=8, display=None, force_version=False):
+    def __init__(self, window, factor=8, display=None, force_version=False, gui=None):
         super(ARandRWidget, self).__init__()
 
         self.window = window
@@ -62,6 +65,7 @@ class ARandRWidget(Gtk.DrawingArea):
         self.setup_draganddrop()
 
         self._xrandr = XRandR(display=display, force_version=force_version)
+        self.gui = gui
 
         self.connect('draw', self.do_expose_event)
 
@@ -135,10 +139,62 @@ class ARandRWidget(Gtk.DrawingArea):
             self._force_repaint()
         self.emit('changed')
 
+    def revert_to(self, orig):
+        self._xrandr.load_from_string (orig)
+        self.save_to_x()
+        self.gui.enable_revert (False)
+
     def save_to_x(self):
         self._xrandr.save_to_x()
+        self.gui.enable_revert (True)
+        data = self._xrandr.save_to_shellscript_string(None, None)
+        cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
+        file = open ("/usr/share/dispsetup.sh", "w")
+        file.write (SHELLSHEBANG)
+        file.write ("\nif ! grep -q 'Raspberry Pi' /proc/device-tree/model || (grep -q okay /proc/device-tree/soc/v3d@7ec00000/status 2> /dev/null || grep -q okay /proc/device-tree/soc/firmwarekms@7e600000/status 2> /dev/null || grep -q okay /proc/device-tree/v3dbus/v3d@7ec04000/status 2> /dev/null) ; then\nif ")
+        file.write (cdata)
+        file.write (" --dryrun ; then \n");
+        file.write (cdata)
+        file.write ("\nfi\nfi\nif [ -e /usr/share/tssetup.sh ] ; then\n. /usr/share/tssetup.sh\nfi\nexit 0");
+        file.close ()
         self.load_from_x()
+        self.save_touchscreen()
 
+    def save_touchscreen(self):
+        tsdriver = None
+        inline = self._output_ts ('xinput')
+        if 'FT5406' in inline:
+            tsdriver = 'FT5406 memory based driver'
+        if tsdriver is not None and 'DSI-1' in self._xrandr.configuration.outputs:
+            dsix = self._xrandr.configuration.outputs['DSI-1'].position[0]
+            dsiy = self._xrandr.configuration.outputs['DSI-1'].position[1]
+            dsiw = self._xrandr.configuration.outputs['DSI-1'].size[0]
+            dsih = self._xrandr.configuration.outputs['DSI-1'].size[1]
+            scrw = self._xrandr.configuration.virtual[0]
+            scrh = self._xrandr.configuration.virtual[1]
+            c0 = float(dsiw) / float(scrw)
+            c1 = float(dsix) / float(scrw)
+            c2 = float(dsih) / float(scrh)
+            c3 = float(dsiy) / float(scrh)
+            tscmd = 'xinput set-prop "' + tsdriver + '" --type=float "Coordinate Transformation Matrix" ' + str(c0) + ' 0 ' + str(c1) + ' 0 ' + str(c2) + ' ' + str(c3) + ' 0 0 1'
+            self._output_ts (tscmd)
+            file = open ("/usr/share/tssetup.sh", "w")
+            file.write ("if xinput | grep -q \"" + tsdriver + "\" ; then " + tscmd + " ; fi")
+            file.close ()
+        else:
+            if os.path.isfile ("/usr/share/tssetup.sh"):
+                os.remove ("/usr/share/tssetup.sh")
+
+    def _output_ts(self, cmd):
+        p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self._xrandr.environ)
+        ret, err = p.communicate()
+        status = p.wait()
+        if status!=0:
+            raise Exception("xinput returned error code %d: %s"%(status,err))
+        if err:
+            warnings.warn("xinput wrote to stderr, but did not report an error (Message was: %r)"%err)
+        return ret
+ 
     def save_to_file(self, file, template=None, additional=None):
         data = self._xrandr.save_to_shellscript_string(template, additional)
         open(file, 'w').write(data)
@@ -359,7 +415,8 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def contextmenu(self):
         menu = Gtk.Menu()
-        for output_name in self._xrandr.outputs:
+        sort_outs = sorted(self._xrandr.outputs)
+        for output_name in sort_outs:
             output_config = self._xrandr.configuration.outputs[output_name]
             output_state = self._xrandr.state.outputs[output_name]
 
@@ -377,36 +434,53 @@ class ARandRWidget(Gtk.DrawingArea):
         output_config = self._xrandr.configuration.outputs[output_name]
         output_state = self._xrandr.state.outputs[output_name]
 
-        enabled = Gtk.CheckMenuItem(_("Active"))
-        enabled.props.active = output_config.active
-        enabled.connect('activate', lambda menuitem: self.set_active(
-            output_name, menuitem.props.active))
+        #enabled = Gtk.CheckMenuItem(_("Active"))
+        #enabled.props.active = output_config.active
+        #enabled.connect('activate', lambda menuitem: self.set_active(
+        #    output_name, menuitem.props.active))
 
-        menu.add(enabled)
+        #menu.add(enabled)
 
         if output_config.active:
-            if Feature.PRIMARY in self._xrandr.features:
-                primary = Gtk.CheckMenuItem(_("Primary"))
-                primary.props.active = output_config.primary
-                primary.connect('activate', lambda menuitem: self.set_primary(
-                    output_name, menuitem.props.active))
-                menu.add(primary)
+            #if Feature.PRIMARY in self._xrandr.features:
+            #    primary = Gtk.CheckMenuItem(_("Primary"))
+            #    primary.props.active = output_config.primary
+            #    primary.connect('activate', lambda menuitem: self.set_primary(
+            #        output_name, menuitem.props.active))
+            #    menu.add(primary)
 
+            cur = output_config.mode.name.split()
             res_m = Gtk.Menu()
+            inmenu = []
             for mode in output_state.modes:
-                i = Gtk.CheckMenuItem(str(mode))
-                i.props.draw_as_radio = True
-                i.props.active = (output_config.mode.name == mode.name)
+                ms = mode.name.split()
+                if not ms[0] in inmenu:
+                    inmenu.append(ms[0])
+                    i = Gtk.CheckMenuItem(str(ms[0]))
+                    i.props.draw_as_radio = True
+                    i.props.active = (cur[0] == ms[0])
+                    def _res_set(menuitem, on, mode):
+                        try:
+                            self.set_resolution(on, mode)
+                        except InadequateConfiguration as e:
+                            self.error_message(_("Setting this resolution is not possible here: %s")%e.message)
+                    i.connect('activate', _res_set, output_name, mode)
+                    res_m.add(i)
 
-                def _res_set(_menuitem, output_name, mode):
-                    try:
-                        self.set_resolution(output_name, mode)
-                    except InadequateConfiguration as exc:
-                        self.error_message(
-                            _("Setting this resolution is not possible here: %s") % exc
-                        )
-                i.connect('activate', _res_set, output_name, mode)
-                res_m.add(i)
+            ref_m = Gtk.Menu()
+            for r in output_state.modes:
+                ms = r.name.split()
+                if cur[0] == ms[0]:
+                    i = Gtk.CheckMenuItem(str(ms[1]))
+                    i.props.draw_as_radio = True
+                    i.props.active = (cur[1] == ms[1])
+                    def _ref_set(menuitem, on, r):
+                        try:
+                            self.set_resolution(on, r)
+                        except InadequateConfiguration as e:
+                            self.error_message(_("Setting this resolution is not possible here: %s")%e.message)
+                    i.connect('activate', _ref_set, output_name, r)
+                    ref_m.add(i)
 
             or_m = Gtk.Menu()
             for rotation in ROTATIONS:
@@ -428,10 +502,13 @@ class ARandRWidget(Gtk.DrawingArea):
 
             res_i = Gtk.MenuItem(_("Resolution"))
             res_i.props.submenu = res_m
+            ref_i = Gtk.MenuItem(_("Frequency"))
+            ref_i.props.submenu = ref_m
             or_i = Gtk.MenuItem(_("Orientation"))
             or_i.props.submenu = or_m
 
             menu.add(res_i)
+            menu.add(ref_i)
             menu.add(or_i)
 
         menu.show_all()

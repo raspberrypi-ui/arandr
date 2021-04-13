@@ -258,7 +258,9 @@ setup(name = PACKAGENAME,
             'update_translator_credits': update_translator_credits,
             },
         data_files = [
-            ('share/applications', ['data/arandr.desktop']), # FIXME: use desktop-file-install?
+            ('share/applications', ['data/arandr.desktop']),
+            ('share/fkms/applications', ['data/fkms/arandr.desktop']),
+            ('lib/arandr', ['data/pwdarandr.sh']),
             ('share/man/man1', ['build/arandr.1.gz', 'build/unxrandr.1.gz']),
             ],
         scripts = ['arandr', 'unxrandr'],

@@ -130,14 +130,27 @@ class XRandR:
                     (output_argument[2 * i], output_argument[2 * i + 1])
                     for i in range(len(output_argument) // 2)
                 ]
+                mode = ''
+                rate = ''
                 for part in parts:
                     if part[0] == '--mode':
-                        for namedmode in output_state.modes:
-                            if namedmode.name == part[1]:
-                                output.mode = namedmode
-                                break
-                        else:
-                            raise FileLoadError("Not a known mode: %s" % part[1])
+                        mode = p[1]
+                        if mode and rate:
+                            for namedmode in output_state.modes:
+                                if namedmode.name == mode + ' ' + rate + 'Hz':
+                                    o.mode = namedmode
+                                    break
+                            else:
+                                raise FileLoadError("Not a known mode: %s" % (mode + ' ' + rate + 'Hz'))
+                    elif p[0] == '--rate':
+                        rate = p[1]
+                        if mode and rate:
+                            for namedmode in output_state.modes:
+                                if namedmode.name == mode + ' ' + rate + 'Hz':
+                                    o.mode = namedmode
+                                    break
+                            else:
+                                raise FileLoadError("Not a known mode: %s" % (mode + ' ' + rate + 'Hz'))
                     elif part[0] == '--pos':
                         output.position = Position(part[1])
                     elif part[0] == '--rotate':
@@ -200,8 +213,9 @@ class XRandR:
                     output.rotations.add(rotation)
 
             currentname = None
-            for detail, w, h in details:
+            for detail, w, h, f in details:
                 name, _mode_raw = detail[0:2]
+                name = name + f
                 mode_id = _mode_raw.strip("()")
                 try:
                     size = Size([int(w), int(h)])
@@ -244,9 +258,14 @@ class XRandR:
                 continue
             elif line.startswith(2 * ' '):  # [mode, width, height]
                 line = line.strip()
-                if reduce(bool.__or__, [line.startswith(x + ':') for x in "hv"]):
+                if line.startswith('h:'):
                     line = line[-len(line):line.index(" start") - len(line)]
                     items[-1][1][-1].append(line[line.rindex(' '):])
+                elif line.startswith('v:'):
+                    l1 = line[-len(line):line.index(" start")-len(line)]
+                    items[-1][1][-1].append(l1[l1.rindex(' '):])
+                    l1 = line[-len(line):line.index("Hz")-len(line)]
+                    items[-1][1][-1].append(l1[l1.rindex(' '):]+'Hz')
                 else:  # mode
                     items[-1][1].append([line.split()])
             else:
@@ -387,8 +406,11 @@ class XRandR:
                     if Feature.PRIMARY in self._xrandr.features:
                         if output.primary:
                             args.append("--primary")
+                    modres=str(output.mode.name).split(" ")
                     args.append("--mode")
-                    args.append(str(output.mode.name))
+                    args.append(str(modres[0]))
+                    args.append("--rate")
+                    args.append(str(modres[1]).replace('Hz',''))
                     args.append("--pos")
                     args.append(str(output.position))
                     args.append("--rotate")

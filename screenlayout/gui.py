@@ -77,23 +77,21 @@ class Application:
     uixml = """
     <ui>
         <menubar name="MenuBar">
-            <menu action="Layout">
-                <menuitem action="New" />
-                <menuitem action="Open" />
-                <menuitem action="SaveAs" />
-                <separator />
-                <menuitem action="Apply" />
-                <menuitem action="LayoutSettings" />
-                <separator />
+            <menu action="File">
                 <menuitem action="Quit" />
+            </menu>
+            <menu action="Configure">
+                <menuitem action="Apply" />
+                <menuitem action="Revert" />
+                <separator />
+                <menu action="Outputs" name="Outputs">
+                    <menuitem action="OutputsDummy" />
+                </menu>
             </menu>
             <menu action="View">
                 <menuitem action="Zoom4" />
                 <menuitem action="Zoom8" />
                 <menuitem action="Zoom16" />
-            </menu>
-            <menu action="Outputs" name="Outputs">
-                <menuitem action="OutputsDummy" />
             </menu>
             <menu action="Help">
                 <menuitem action="About" />
@@ -101,10 +99,7 @@ class Application:
         </menubar>
         <toolbar name="ToolBar">
             <toolitem action="Apply" />
-            <separator />
-            <toolitem action="New" />
-            <toolitem action="Open" />
-            <toolitem action="SaveAs" />
+            <toolitem action="Revert" />
         </toolbar>
     </ui>
     """
@@ -112,16 +107,18 @@ class Application:
     def __init__(self, file=None, randr_display=None, force_version=False):
         self.window = window = Gtk.Window()
         window.props.title = "Screen Layout Editor"
+        window.set_icon_name('computer')
 
         # actions
         actiongroup = Gtk.ActionGroup('default')
         actiongroup.add_actions([
-            ("Layout", None, _("_Layout")),
+            ("File", None, _("_File")),
             ("New", Gtk.STOCK_NEW, None, None, None, self.do_new),
             ("Open", Gtk.STOCK_OPEN, None, None, None, self.do_open),
             ("SaveAs", Gtk.STOCK_SAVE_AS, None, None, None, self.do_save_as),
 
             ("Apply", Gtk.STOCK_APPLY, None, '<Control>Return', None, self.do_apply),
+            ("Revert", Gtk.STOCK_UNDO, None, None, None, self.do_revert),
             ("LayoutSettings", Gtk.STOCK_PROPERTIES, None,
              '<Alt>Return', None, self.do_open_properties),
 
@@ -130,7 +127,8 @@ class Application:
 
             ("View", None, _("_View")),
 
-            ("Outputs", None, _("_Outputs")),
+            ("Configure", None, _("_Configure")),
+            ("Outputs", None, _("_Screens")),
             ("OutputsDummy", None, _("Dummy")),
 
             ("Help", None, _("_Help")),
@@ -156,7 +154,7 @@ class Application:
         # widget
         self.widget = widget.ARandRWidget(
             display=randr_display, force_version=force_version,
-            window=self.window
+            window=self.window, gui=self
         )
         if file is None:
             self.filetemplate = self.widget.load_from_x()
@@ -179,6 +177,7 @@ class Application:
         window.show_all()
 
         self.gconf = None
+        self.enable_revert (False)
 
     #################### actions ####################
 
@@ -213,13 +212,51 @@ class Application:
         dialog.run()
         dialog.destroy()
 
+    def enable_revert (self, state):
+        ag = self.uimanager.get_action_groups()
+        rev = ag[0].get_action ("Revert")
+        rev.set_sensitive (state)
+
+    def revert_timeout (self):
+        self.do_revert ()
+        self.conf.destroy ()
+
+    def conf_response (self, widget, response_id):
+        if response_id == gtk.RESPONSE_CANCEL or response_id == gtk.RESPONSE_DELETE_EVENT:
+            self.do_revert ()
+        gtk.timeout_remove (self.revert_timer)
+        widget.destroy ()
+
+    def show_confirm (self):
+        self.conf = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_INFO, gtk.BUTTONS_OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting. Reverting in 10 seconds..."))
+        self.revert_timer = gtk.timeout_add (10000, self.revert_timeout)
+        self.conf.connect ("response", self.conf_response)
+        self.conf.run ()
+
     @actioncallback
     def do_apply(self):
         if self.widget.abort_if_unsafe():
             return
 
         try:
+            current = screenlayout.xrandr.XRandR()
+            current.load_from_x()
+            self.original = current.save_to_shellscript_string()
             self.widget.save_to_x()
+            self.show_confirm()
+
+        except Exception as e:
+            d = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, _("XRandR failed:\n%s")%e)
+            d.run()
+            d.destroy()
+
+    @actioncallback
+    def do_revert(self):
+        if self.widget.abort_if_unsafe():
+            return
+
+        try:
+            self.widget.revert_to (self.original)
         except Exception as exc:  # pylint: disable=broad-except
             dialog = Gtk.MessageDialog(
                 None, Gtk.DialogFlags.MODAL, Gtk.MessageType.ERROR,
@@ -288,7 +325,7 @@ class Application:
         self._populate_outputs()
 
     def _populate_outputs(self):
-        outputs_widget = self.uimanager.get_widget('/MenuBar/Outputs')
+        outputs_widget = self.uimanager.get_widget('/MenuBar/Configure/Outputs')
         outputs_widget.props.submenu = self.widget.contextmenu()
 
     #################### application related ####################
