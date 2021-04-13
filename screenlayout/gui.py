@@ -26,9 +26,10 @@ import inspect
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 
 from . import widget
+from .xrandr import XRandR
 from .i18n import _
 from .meta import (
     __version__, TRANSLATORS, COPYRIGHT, PROGRAMNAME, PROGRAMDESCRIPTION,
@@ -222,14 +223,14 @@ class Application:
         self.conf.destroy ()
 
     def conf_response (self, widget, response_id):
-        if response_id == gtk.RESPONSE_CANCEL or response_id == gtk.RESPONSE_DELETE_EVENT:
+        if response_id == Gtk.ResponseType.CANCEL or response_id == Gtk.ResponseType.DELETE_EVENT:
             self.do_revert ()
-        gtk.timeout_remove (self.revert_timer)
+        GLib.source_remove (self.revert_timer)
         widget.destroy ()
 
     def show_confirm (self):
-        self.conf = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_INFO, gtk.BUTTONS_OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting. Reverting in 10 seconds..."))
-        self.revert_timer = gtk.timeout_add (10000, self.revert_timeout)
+        self.conf = Gtk.MessageDialog (None, None, Gtk.MessageType.INFO, Gtk.ButtonsType.OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting. Reverting in 10 seconds..."))
+        self.revert_timer = GLib.timeout_add (10000, self.revert_timeout)
         self.conf.connect ("response", self.conf_response)
         self.conf.run ()
 
@@ -239,14 +240,14 @@ class Application:
             return
 
         try:
-            current = screenlayout.xrandr.XRandR()
+            current = XRandR()
             current.load_from_x()
             self.original = current.save_to_shellscript_string()
             self.widget.save_to_x()
             self.show_confirm()
 
         except Exception as e:
-            d = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, _("XRandR failed:\n%s")%e)
+            d = Gtk.MessageDialog(None, None, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, _("XRandR failed:\n%s")%e)
             d.run()
             d.destroy()
 

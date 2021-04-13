@@ -186,7 +186,7 @@ class ARandRWidget(Gtk.DrawingArea):
                 os.remove ("/usr/share/tssetup.sh")
 
     def _output_ts(self, cmd):
-        p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self._xrandr.environ)
+        p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self._xrandr.environ, encoding='utf8')
         ret, err = p.communicate()
         status = p.wait()
         if status!=0:

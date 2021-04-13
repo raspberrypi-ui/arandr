@@ -134,20 +134,20 @@ class XRandR:
                 rate = ''
                 for part in parts:
                     if part[0] == '--mode':
-                        mode = p[1]
+                        mode = part[1]
                         if mode and rate:
                             for namedmode in output_state.modes:
                                 if namedmode.name == mode + ' ' + rate + 'Hz':
-                                    o.mode = namedmode
+                                    output.mode = namedmode
                                     break
                             else:
                                 raise FileLoadError("Not a known mode: %s" % (mode + ' ' + rate + 'Hz'))
-                    elif p[0] == '--rate':
-                        rate = p[1]
+                    elif part[0] == '--rate':
+                        rate = part[1]
                         if mode and rate:
                             for namedmode in output_state.modes:
                                 if namedmode.name == mode + ' ' + rate + 'Hz':
-                                    o.mode = namedmode
+                                    output.mode = namedmode
                                     break
                             else:
                                 raise FileLoadError("Not a known mode: %s" % (mode + ' ' + rate + 'Hz'))
