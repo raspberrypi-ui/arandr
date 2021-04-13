@@ -159,6 +159,7 @@ class ARandRWidget(Gtk.DrawingArea):
         file.close ()
         self.load_from_x()
         self.save_touchscreen()
+        self.save_monitors_xml()
 
     def save_touchscreen(self):
         tsdriver = None
@@ -184,6 +185,37 @@ class ARandRWidget(Gtk.DrawingArea):
         else:
             if os.path.isfile ("/usr/share/tssetup.sh"):
                 os.remove ("/usr/share/tssetup.sh")
+
+    def save_monitors_xml (self):
+        path = os.path.expanduser ('~' + os.environ['SUDO_USER']) + '/.config/monitors.xml'
+        file = open (path, "w")
+        file.write ("<monitors version=\"2\">\n")
+        for output_name in self._xrandr.outputs:
+            file.write ("  <configuration>\n    <logicalmonitor>\n")
+            output_config = self._xrandr.configuration.outputs[output_name]
+            output_state = self._xrandr.state.outputs[output_name]
+            file.write ("      <x>" + str(output_config.position[0]) + "</x>\n")
+            file.write ("      <y>" + str(output_config.position[1]) + "</y>\n")
+            if output_config.primary:
+                file.write ("      <primary>yes</primary>\n")
+            else:
+                file.write ("      <primary>no</primary>\n")
+            file.write ("      <monitor>\n")
+            file.write ("        <monitorspec>\n")
+            file.write ("          <connector>" + output_name + "</connector>\n")
+            file.write ("          <vendor>" + output_config.pmanu + "</vendor>\n")
+            file.write ("          <product>" + output_config.pname + "</product>\n")
+            file.write ("          <serial>" + output_config.pserial + "</serial>\n")
+            file.write ("        </monitorspec>\n")
+            file.write ("        <mode>\n")
+            file.write ("          <width>" + str(output_config.size[0]) + "</width>\n")
+            file.write ("          <height>" + str(output_config.size[1]) + "</height>\n")
+            file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
+            file.write ("        </mode>\n")
+            file.write ("      </monitor>\n")
+            file.write ("    </logicalmonitor>\n  </configuration>\n")
+        file.write ("</monitors>\n")
+        file.close ()
 
     def _output_ts(self, cmd):
         p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self._xrandr.environ, encoding='utf8')
