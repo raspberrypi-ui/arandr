@@ -211,13 +211,16 @@ class ARandRWidget(Gtk.DrawingArea):
             file.write ("          <width>" + str(output_config.size[0]) + "</width>\n")
             file.write ("          <height>" + str(output_config.size[1]) + "</height>\n")
             file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
-            print (output_config.mode.name)
             if 'i' in output_config.mode.name:
                 file.write ("          <flag>interlace</flag>\n")
             file.write ("        </mode>\n")
             file.write ("      </monitor>\n")
             file.write ("      <transform>\n")
-            file.write ("        <rotation>" + output_config.rotation + "</rotation>\n")
+            if output_config.rotation == "inverted":
+                rot = "upside_down"
+            else:
+                rot = output_config.rotation
+            file.write ("        <rotation>" + rot + "</rotation>\n")
             file.write ("      </transform>\n")
             file.write ("    </logicalmonitor>\n")
         file.write ("  </configuration>\n</monitors>\n")
