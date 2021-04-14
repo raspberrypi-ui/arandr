@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 import os
 import subprocess
-import shlex
 import stat
 
 import gi
@@ -163,8 +162,8 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def save_touchscreen(self):
         tsdriver = None
-        inline = self._output_ts ('xinput')
-        if 'FT5406' in inline:
+        res = subprocess.run ("xinput", shell=True, capture_output=True, encoding='utf8')
+        if 'FT5406' in res.stdout:
             tsdriver = 'FT5406 memory based driver'
         if tsdriver is not None and 'DSI-1' in self._xrandr.configuration.outputs:
             dsix = self._xrandr.configuration.outputs['DSI-1'].position[0]
@@ -178,7 +177,7 @@ class ARandRWidget(Gtk.DrawingArea):
             c2 = float(dsih) / float(scrh)
             c3 = float(dsiy) / float(scrh)
             tscmd = 'xinput set-prop "' + tsdriver + '" --type=float "Coordinate Transformation Matrix" ' + str(c0) + ' 0 ' + str(c1) + ' 0 ' + str(c2) + ' ' + str(c3) + ' 0 0 1'
-            self._output_ts (tscmd)
+            subprocess.run (tscmd, shell=True)
             file = open ("/usr/share/tssetup.sh", "w")
             file.write ("if xinput | grep -q \"" + tsdriver + "\" ; then " + tscmd + " ; fi")
             file.close ()
@@ -226,16 +225,6 @@ class ARandRWidget(Gtk.DrawingArea):
         file.write ("  </configuration>\n</monitors>\n")
         file.close ()
 
-    def _output_ts(self, cmd):
-        p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self._xrandr.environ, encoding='utf8')
-        ret, err = p.communicate()
-        status = p.wait()
-        if status!=0:
-            raise Exception("xinput returned error code %d: %s"%(status,err))
-        if err:
-            warnings.warn("xinput wrote to stderr, but did not report an error (Message was: %r)"%err)
-        return ret
- 
     def save_to_file(self, file, template=None, additional=None):
         data = self._xrandr.save_to_shellscript_string(template, additional)
         open(file, 'w').write(data)
