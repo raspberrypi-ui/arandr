@@ -189,9 +189,9 @@ class ARandRWidget(Gtk.DrawingArea):
     def save_monitors_xml (self):
         path = os.path.expanduser ('~' + os.environ['SUDO_USER']) + '/.config/monitors.xml'
         file = open (path, "w")
-        file.write ("<monitors version=\"2\">\n")
+        file.write ("<monitors version=\"2\">\n  <configuration>\n")
         for output_name in self._xrandr.outputs:
-            file.write ("  <configuration>\n    <logicalmonitor>\n")
+            file.write ("    <logicalmonitor>\n")
             output_config = self._xrandr.configuration.outputs[output_name]
             output_state = self._xrandr.state.outputs[output_name]
             file.write ("      <x>" + str(output_config.position[0]) + "</x>\n")
@@ -211,10 +211,16 @@ class ARandRWidget(Gtk.DrawingArea):
             file.write ("          <width>" + str(output_config.size[0]) + "</width>\n")
             file.write ("          <height>" + str(output_config.size[1]) + "</height>\n")
             file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
+            print (output_config.mode.name)
+            if 'i' in output_config.mode.name:
+                file.write ("          <flag>interlace</flag>\n")
             file.write ("        </mode>\n")
             file.write ("      </monitor>\n")
-            file.write ("    </logicalmonitor>\n  </configuration>\n")
-        file.write ("</monitors>\n")
+            file.write ("      <transform>\n")
+            file.write ("        <rotation>" + output_config.rotation + "</rotation>\n")
+            file.write ("      </transform>\n")
+            file.write ("    </logicalmonitor>\n")
+        file.write ("  </configuration>\n</monitors>\n")
         file.close ()
 
     def _output_ts(self, cmd):
