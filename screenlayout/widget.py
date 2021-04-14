@@ -445,8 +445,7 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def contextmenu(self):
         menu = Gtk.Menu()
-        sort_outs = sorted(self._xrandr.outputs)
-        for output_name in sort_outs:
+        for output_name in sorted(self._xrandr.outputs):
             output_config = self._xrandr.configuration.outputs[output_name]
             output_state = self._xrandr.state.outputs[output_name]
 
