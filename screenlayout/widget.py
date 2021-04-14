@@ -488,6 +488,8 @@ class ARandRWidget(Gtk.DrawingArea):
                     i = Gtk.CheckMenuItem(str(ms[0]))
                     i.props.draw_as_radio = True
                     i.props.active = (cur[0] == ms[0])
+                    if 'i' in str(ms[0]):                           #!!!!! temporarily disable for mutter
+                        i.set_sensitive (False)
                     def _res_set(menuitem, on, mode):
                         try:
                             self.set_resolution(on, mode)
@@ -516,7 +518,8 @@ class ARandRWidget(Gtk.DrawingArea):
                 i = Gtk.CheckMenuItem("%s" % rotation)
                 i.props.draw_as_radio = True
                 i.props.active = (output_config.rotation == rotation)
-
+                if rotation == "left" or rotation == "right":       #!!!!! temporarily disable for mutter
+                    i.set_sensitive (False)
                 def _rot_set(_menuitem, output_name, rotation):
                     try:
                         self.set_rotation(output_name, rotation)
