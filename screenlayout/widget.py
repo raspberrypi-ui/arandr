@@ -22,6 +22,7 @@ from __future__ import division
 import os
 import subprocess
 import stat
+import shutil
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -224,6 +225,7 @@ class ARandRWidget(Gtk.DrawingArea):
             file.write ("    </logicalmonitor>\n")
         file.write ("  </configuration>\n</monitors>\n")
         file.close ()
+        shutil.chown (path, os.environ['SUDO_USER'], os.environ['SUDO_USER'])
 
     def save_to_file(self, file, template=None, additional=None):
         data = self._xrandr.save_to_shellscript_string(template, additional)
