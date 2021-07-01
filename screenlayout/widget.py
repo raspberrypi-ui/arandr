@@ -466,20 +466,20 @@ class ARandRWidget(Gtk.DrawingArea):
         output_config = self._xrandr.configuration.outputs[output_name]
         output_state = self._xrandr.state.outputs[output_name]
 
-        #enabled = Gtk.CheckMenuItem(_("Active"))
-        #enabled.props.active = output_config.active
-        #enabled.connect('activate', lambda menuitem: self.set_active(
-        #    output_name, menuitem.props.active))
+        enabled = Gtk.CheckMenuItem(_("Active"))
+        enabled.props.active = output_config.active
+        enabled.connect('activate', lambda menuitem: self.set_active(
+            output_name, menuitem.props.active))
 
-        #menu.add(enabled)
+        menu.add(enabled)
 
         if output_config.active:
-            #if Feature.PRIMARY in self._xrandr.features:
-            #    primary = Gtk.CheckMenuItem(_("Primary"))
-            #    primary.props.active = output_config.primary
-            #    primary.connect('activate', lambda menuitem: self.set_primary(
-            #        output_name, menuitem.props.active))
-            #    menu.add(primary)
+            if Feature.PRIMARY in self._xrandr.features:
+                primary = Gtk.CheckMenuItem(_("Primary"))
+                primary.props.active = output_config.primary
+                primary.connect('activate', lambda menuitem: self.set_primary(
+                    output_name, menuitem.props.active))
+                menu.add(primary)
 
             cur = output_config.mode.name.split()
             res_m = Gtk.Menu()
