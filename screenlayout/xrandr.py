@@ -247,11 +247,11 @@ class XRandR:
             )
         for index, name in enumerate(self.state.outputs):
             output = self.configuration.outputs[name]
-            res = subprocess.run ("xrandr --screen " + str(index) + " --verbose | edid-decode | grep 'Product Name' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
+            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | grep 'Product Name' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
             output.pname = res.stdout.rstrip ("\n")
-            res = subprocess.run ("xrandr --screen " + str(index) + " --verbose | edid-decode | grep 'Product Serial' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
+            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | grep 'Product Serial' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
             output.pserial = res.stdout.rstrip ("\n")
-            res = subprocess.run ("xrandr --screen " + str(index) + " --verbose | edid-decode | grep 'Manufacturer' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
+            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | grep 'Manufacturer' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
             output.pmanu = res.stdout.rstrip ("\n")
 
     def _load_raw_lines(self):
