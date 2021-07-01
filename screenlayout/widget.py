@@ -191,38 +191,39 @@ class ARandRWidget(Gtk.DrawingArea):
         file = open (path, "w")
         file.write ("<monitors version=\"2\">\n  <configuration>\n")
         for output_name in self._xrandr.outputs:
-            file.write ("    <logicalmonitor>\n")
             output_config = self._xrandr.configuration.outputs[output_name]
             output_state = self._xrandr.state.outputs[output_name]
-            file.write ("      <x>" + str(output_config.position[0]) + "</x>\n")
-            file.write ("      <y>" + str(output_config.position[1]) + "</y>\n")
-            if output_config.primary:
-                file.write ("      <primary>yes</primary>\n")
-            else:
-                file.write ("      <primary>no</primary>\n")
-            file.write ("      <monitor>\n")
-            file.write ("        <monitorspec>\n")
-            file.write ("          <connector>" + output_name + "</connector>\n")
-            file.write ("          <vendor>" + output_config.pmanu + "</vendor>\n")
-            file.write ("          <product>" + output_config.pname + "</product>\n")
-            file.write ("          <serial>" + output_config.pserial + "</serial>\n")
-            file.write ("        </monitorspec>\n")
-            file.write ("        <mode>\n")
-            file.write ("          <width>" + str(output_config.size[0]) + "</width>\n")
-            file.write ("          <height>" + str(output_config.size[1]) + "</height>\n")
-            file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
-            if 'i' in output_config.mode.name:
-                file.write ("          <flag>interlace</flag>\n")
-            file.write ("        </mode>\n")
-            file.write ("      </monitor>\n")
-            file.write ("      <transform>\n")
-            if output_config.rotation == "inverted":
-                rot = "upside_down"
-            else:
-                rot = output_config.rotation
-            file.write ("        <rotation>" + rot + "</rotation>\n")
-            file.write ("      </transform>\n")
-            file.write ("    </logicalmonitor>\n")
+            if output_config.active:
+                file.write ("    <logicalmonitor>\n")
+                file.write ("      <x>" + str(output_config.position[0]) + "</x>\n")
+                file.write ("      <y>" + str(output_config.position[1]) + "</y>\n")
+                if output_config.primary:
+                    file.write ("      <primary>yes</primary>\n")
+                else:
+                    file.write ("      <primary>no</primary>\n")
+                file.write ("      <monitor>\n")
+                file.write ("        <monitorspec>\n")
+                file.write ("          <connector>" + output_name + "</connector>\n")
+                file.write ("          <vendor>" + output_config.pmanu + "</vendor>\n")
+                file.write ("          <product>" + output_config.pname + "</product>\n")
+                file.write ("          <serial>" + output_config.pserial + "</serial>\n")
+                file.write ("        </monitorspec>\n")
+                file.write ("        <mode>\n")
+                file.write ("          <width>" + str(output_config.size[0]) + "</width>\n")
+                file.write ("          <height>" + str(output_config.size[1]) + "</height>\n")
+                file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
+                if 'i' in output_config.mode.name:
+                    file.write ("          <flag>interlace</flag>\n")
+                file.write ("        </mode>\n")
+                file.write ("      </monitor>\n")
+                file.write ("      <transform>\n")
+                if output_config.rotation == "inverted":
+                    rot = "upside_down"
+                else:
+                    rot = output_config.rotation
+                file.write ("        <rotation>" + rot + "</rotation>\n")
+                file.write ("      </transform>\n")
+                file.write ("    </logicalmonitor>\n")
         file.write ("  </configuration>\n</monitors>\n")
         file.close ()
         shutil.chown (path, os.environ['SUDO_USER'], os.environ['SUDO_USER'])

@@ -246,9 +246,7 @@ class XRandR:
                 active, primary, geometry, current_rotation, currentname
             )
         for index, name in enumerate(self.state.outputs):
-            res = subprocess.run ("xrandr --screen " + str(index) + " | grep connected | cut -d' ' -f1 | xargs", shell=True, capture_output=True, encoding='utf8')
-            output_name = res.stdout.rstrip ("\n")
-            output = self.configuration.outputs[output_name]
+            output = self.configuration.outputs[name]
             res = subprocess.run ("xrandr --screen " + str(index) + " --verbose | edid-decode | grep 'Product Name' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
             output.pname = res.stdout.rstrip ("\n")
             res = subprocess.run ("xrandr --screen " + str(index) + " --verbose | edid-decode | grep 'Product Serial' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
