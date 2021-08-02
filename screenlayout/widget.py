@@ -52,6 +52,10 @@ class ARandRWidget(Gtk.DrawingArea):
     def __init__(self, window, factor=8, display=None, force_version=False, gui=None):
         super(ARandRWidget, self).__init__()
 
+        self.onthefly = True
+        if os.system ('ps ax | grep -v grep | grep -q mutter') == 0:
+            self.onthefly = False
+
         self.window = window
         self._factor = factor
 
@@ -145,7 +149,8 @@ class ARandRWidget(Gtk.DrawingArea):
         self.gui.enable_revert (False)
 
     def save_to_x(self):
-        self._xrandr.save_to_x()
+        if self.onthefly is True:
+            self._xrandr.save_to_x()
         self.gui.enable_revert (True)
         data = self._xrandr.save_to_shellscript_string(None, None)
         cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
@@ -157,7 +162,10 @@ class ARandRWidget(Gtk.DrawingArea):
         file.write (cdata)
         file.write ("\nfi\nfi\nif [ -e /usr/share/tssetup.sh ] ; then\n. /usr/share/tssetup.sh\nfi\nexit 0");
         file.close ()
-        self.load_from_x()
+        if self.onthefly is True:
+            self.load_from_x()
+        else:
+            self.load_from_file("/usr/share/dispsetup.sh")
         self.save_touchscreen()
         self.save_monitors_xml()
 

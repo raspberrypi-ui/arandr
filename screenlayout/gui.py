@@ -157,6 +157,8 @@ class Application:
             display=randr_display, force_version=force_version,
             window=self.window, gui=self
         )
+        if self.widget.onthefly is False:
+            file="/usr/share/dispsetup.sh"
         if file is None:
             self.filetemplate = self.widget.load_from_x()
         else:
@@ -228,10 +230,19 @@ class Application:
         GLib.source_remove (self.revert_timer)
         widget.destroy ()
 
+    def reboot_response (self, widget, response_id):
+        if response_id == Gtk.ResponseType.YES:
+            os.system ('reboot')
+        widget.destroy ()
+
     def show_confirm (self):
-        self.conf = Gtk.MessageDialog (None, None, Gtk.MessageType.INFO, Gtk.ButtonsType.OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting. Reverting in 10 seconds..."))
-        self.revert_timer = GLib.timeout_add (10000, self.revert_timeout)
-        self.conf.connect ("response", self.conf_response)
+        if self.widget.onthefly is True:
+            self.conf = Gtk.MessageDialog (None, None, Gtk.MessageType.INFO, Gtk.ButtonsType.OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting. Reverting in 10 seconds..."))
+            self.revert_timer = GLib.timeout_add (10000, self.revert_timeout)
+            self.conf.connect ("response", self.conf_response)
+        else:
+            self.conf = Gtk.MessageDialog (None, None, Gtk.MessageType.INFO, Gtk.ButtonsType.YES_NO, _("Screen layout updated - changes will take effect on reboot.\nClick 'Yes' to reboot now, or 'No' to reboot later"))
+            self.conf.connect ("response", self.reboot_response)
         self.conf.run ()
 
     @actioncallback
@@ -241,7 +252,10 @@ class Application:
 
         try:
             current = XRandR()
-            current.load_from_x()
+            if self.widget.onthefly is True:
+                current.load_from_x()
+            else:
+                current.load_from_string(open("/usr/share/dispsetup.sh", "r").read())
             self.original = current.save_to_shellscript_string()
             self.widget.save_to_x()
             self.show_confirm()
