@@ -152,6 +152,15 @@ class ARandRWidget(Gtk.DrawingArea):
         if self.onthefly is True:
             self._xrandr.save_to_x()
         self.gui.enable_revert (True)
+        self.save_dispsetup_sh()
+        self.save_touchscreen()
+        self.save_monitors_xml()
+        if self.onthefly is True:
+            self.load_from_x()
+        else:
+            self.load_from_file("/usr/share/dispsetup.sh")
+
+    def save_dispsetup_sh(self):
         data = self._xrandr.save_to_shellscript_string(None, None)
         cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
         file = open ("/usr/share/dispsetup.sh", "w")
@@ -162,12 +171,6 @@ class ARandRWidget(Gtk.DrawingArea):
         file.write (cdata)
         file.write ("\nfi\nfi\nif [ -e /usr/share/tssetup.sh ] ; then\n. /usr/share/tssetup.sh\nfi\nexit 0");
         file.close ()
-        if self.onthefly is True:
-            self.load_from_x()
-        else:
-            self.load_from_file("/usr/share/dispsetup.sh")
-        self.save_touchscreen()
-        self.save_monitors_xml()
 
     def save_touchscreen(self):
         tsdriver = None
@@ -194,7 +197,7 @@ class ARandRWidget(Gtk.DrawingArea):
             if os.path.isfile ("/usr/share/tssetup.sh"):
                 os.remove ("/usr/share/tssetup.sh")
 
-    def save_monitors_xml (self):
+    def save_monitors_xml(self):
         path = os.path.expanduser ('~' + os.environ['SUDO_USER']) + '/.config/monitors.xml'
         file = open (path, "w")
         file.write ("<monitors version=\"2\">\n  <configuration>\n")
@@ -203,8 +206,8 @@ class ARandRWidget(Gtk.DrawingArea):
             output_state = self._xrandr.state.outputs[output_name]
             if output_config.active:
                 file.write ("    <logicalmonitor>\n")
-                file.write ("      <x>" + str(output_config.position[0]) + "</x>\n")
-                file.write ("      <y>" + str(output_config.position[1]) + "</y>\n")
+                file.write ("      <x>" + str(int(output_config.position[0])) + "</x>\n")
+                file.write ("      <y>" + str(int(output_config.position[1])) + "</y>\n")
                 if output_config.primary:
                     file.write ("      <primary>yes</primary>\n")
                 else:
@@ -217,8 +220,8 @@ class ARandRWidget(Gtk.DrawingArea):
                 file.write ("          <serial>" + output_config.pserial + "</serial>\n")
                 file.write ("        </monitorspec>\n")
                 file.write ("        <mode>\n")
-                file.write ("          <width>" + str(output_config.size[0]) + "</width>\n")
-                file.write ("          <height>" + str(output_config.size[1]) + "</height>\n")
+                file.write ("          <width>" + str(int(output_config.size[0])) + "</width>\n")
+                file.write ("          <height>" + str(int(output_config.size[1])) + "</height>\n")
                 file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
                 if 'i' in output_config.mode.name:
                     file.write ("          <flag>interlace</flag>\n")
