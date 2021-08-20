@@ -147,6 +147,12 @@ class ARandRWidget(Gtk.DrawingArea):
     def save_to_x(self):
         self._xrandr.save_to_x()
         self.gui.enable_revert (True)
+        self.load_from_x()
+        self.save_dispsetup_sh()
+        self.save_touchscreen()
+        self.save_monitors_xml()
+
+    def save_dispsetup_sh (self):
         data = self._xrandr.save_to_shellscript_string(None, None)
         cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
         file = open ("/usr/share/dispsetup.sh", "w")
@@ -157,11 +163,8 @@ class ARandRWidget(Gtk.DrawingArea):
         file.write (cdata)
         file.write ("\nfi\nfi\nif [ -e /usr/share/tssetup.sh ] ; then\n. /usr/share/tssetup.sh\nfi\nexit 0");
         file.close ()
-        self.load_from_x()
-        self.save_touchscreen()
-        self.save_monitors_xml()
 
-    def save_touchscreen(self):
+    def save_touchscreen (self):
         tsdriver = None
         res = subprocess.run ("xinput", shell=True, capture_output=True, encoding='utf8')
         if 'FT5406' in res.stdout:
