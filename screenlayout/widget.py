@@ -195,8 +195,8 @@ class ARandRWidget(Gtk.DrawingArea):
             output_state = self._xrandr.state.outputs[output_name]
             if output_config.active:
                 file.write ("    <logicalmonitor>\n")
-                file.write ("      <x>" + str(output_config.position[0]) + "</x>\n")
-                file.write ("      <y>" + str(output_config.position[1]) + "</y>\n")
+                file.write ("      <x>" + str(int(output_config.position[0])) + "</x>\n")
+                file.write ("      <y>" + str(int(output_config.position[1])) + "</y>\n")
                 if output_config.primary:
                     file.write ("      <primary>yes</primary>\n")
                 else:
@@ -209,8 +209,8 @@ class ARandRWidget(Gtk.DrawingArea):
                 file.write ("          <serial>" + output_config.pserial + "</serial>\n")
                 file.write ("        </monitorspec>\n")
                 file.write ("        <mode>\n")
-                file.write ("          <width>" + str(output_config.size[0]) + "</width>\n")
-                file.write ("          <height>" + str(output_config.size[1]) + "</height>\n")
+                file.write ("          <width>" + str(int(output_config.size[0])) + "</width>\n")
+                file.write ("          <height>" + str(int(output_config.size[1])) + "</height>\n")
                 file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
                 if 'i' in output_config.mode.name:
                     file.write ("          <flag>interlace</flag>\n")
