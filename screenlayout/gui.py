@@ -162,7 +162,10 @@ class Application:
         if file is None:
             self.filetemplate = self.widget.load_from_x()
         else:
-            self.filetemplate = self.widget.load_from_file(file)
+            try:
+                self.filetemplate = self.widget.load_from_file(file)
+            except:
+                self.filetemplate = self.widget.load_from_x()
 
         self.widget.connect('changed', self._widget_changed)
         self._widget_changed(self.widget)
@@ -255,7 +258,10 @@ class Application:
             if self.widget.onthefly is True:
                 current.load_from_x()
             else:
-                current.load_from_string(open("/usr/share/dispsetup.sh", "r").read())
+                try:
+                    current.load_from_string(open("/usr/share/dispsetup.sh", "r").read())
+                except:
+                    current.load_from_x()
             self.original = current.save_to_shellscript_string()
             self.widget.save_to_x()
             self.show_confirm()
