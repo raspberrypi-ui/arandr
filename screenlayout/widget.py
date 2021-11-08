@@ -220,8 +220,12 @@ class ARandRWidget(Gtk.DrawingArea):
                 file.write ("          <serial>" + output_config.pserial + "</serial>\n")
                 file.write ("        </monitorspec>\n")
                 file.write ("        <mode>\n")
-                file.write ("          <width>" + str(int(output_config.size[0])) + "</width>\n")
-                file.write ("          <height>" + str(int(output_config.size[1])) + "</height>\n")
+                if output_config.rotation == "left" or output_config.rotation == "right":
+                    file.write ("          <width>" + str(int(output_config.size[1])) + "</width>\n")
+                    file.write ("          <height>" + str(int(output_config.size[0])) + "</height>\n")
+                else:
+                    file.write ("          <width>" + str(int(output_config.size[0])) + "</width>\n")
+                    file.write ("          <height>" + str(int(output_config.size[1])) + "</height>\n")
                 file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
                 if 'i' in output_config.mode.name:
                     file.write ("          <flag>interlace</flag>\n")
@@ -532,8 +536,6 @@ class ARandRWidget(Gtk.DrawingArea):
                 i = Gtk.CheckMenuItem("%s" % rotation)
                 i.props.draw_as_radio = True
                 i.props.active = (output_config.rotation == rotation)
-                if rotation == "left" or rotation == "right":       #!!!!! temporarily disable for mutter
-                    i.set_sensitive (False)
                 def _rot_set(_menuitem, output_name, rotation):
                     try:
                         self.set_rotation(output_name, rotation)
