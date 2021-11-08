@@ -172,7 +172,7 @@ class ARandRWidget(Gtk.DrawingArea):
         file.write ("\nfi\nfi\nif [ -e /usr/share/tssetup.sh ] ; then\n. /usr/share/tssetup.sh\nfi\nexit 0");
         file.close ()
 
-    def save_touchscreen (self):
+    def save_touchscreen(self):
         tsdriver = None
         res = subprocess.run ("xinput", shell=True, capture_output=True, encoding='utf8')
         if 'FT5406' in res.stdout:
