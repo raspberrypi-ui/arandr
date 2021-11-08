@@ -52,6 +52,10 @@ class ARandRWidget(Gtk.DrawingArea):
     def __init__(self, window, factor=8, display=None, force_version=False, gui=None):
         super(ARandRWidget, self).__init__()
 
+        self.onthefly = True
+        if os.system ('ps ax | grep -v grep | grep -q mutter') == 0:
+            self.onthefly = False
+
         self.window = window
         self._factor = factor
 
@@ -145,14 +149,18 @@ class ARandRWidget(Gtk.DrawingArea):
         self.gui.enable_revert (False)
 
     def save_to_x(self):
-        self._xrandr.save_to_x()
+        if self.onthefly is True:
+            self._xrandr.save_to_x()
         self.gui.enable_revert (True)
-        self.load_from_x()
         self.save_dispsetup_sh()
         self.save_touchscreen()
         self.save_monitors_xml()
+        if self.onthefly is True:
+            self.load_from_x()
+        else:
+            self.load_from_file("/usr/share/dispsetup.sh")
 
-    def save_dispsetup_sh (self):
+    def save_dispsetup_sh(self):
         data = self._xrandr.save_to_shellscript_string(None, None)
         cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
         file = open ("/usr/share/dispsetup.sh", "w")
@@ -189,7 +197,7 @@ class ARandRWidget(Gtk.DrawingArea):
             if os.path.isfile ("/usr/share/tssetup.sh"):
                 os.remove ("/usr/share/tssetup.sh")
 
-    def save_monitors_xml (self):
+    def save_monitors_xml(self):
         path = os.path.expanduser ('~' + os.environ['SUDO_USER']) + '/.config/monitors.xml'
         file = open (path, "w")
         file.write ("<monitors version=\"2\">\n  <configuration>\n")
@@ -212,8 +220,12 @@ class ARandRWidget(Gtk.DrawingArea):
                 file.write ("          <serial>" + output_config.pserial + "</serial>\n")
                 file.write ("        </monitorspec>\n")
                 file.write ("        <mode>\n")
-                file.write ("          <width>" + str(int(output_config.size[0])) + "</width>\n")
-                file.write ("          <height>" + str(int(output_config.size[1])) + "</height>\n")
+                if output_config.rotation == "left" or output_config.rotation == "right":
+                    file.write ("          <width>" + str(int(output_config.size[1])) + "</width>\n")
+                    file.write ("          <height>" + str(int(output_config.size[0])) + "</height>\n")
+                else:
+                    file.write ("          <width>" + str(int(output_config.size[0])) + "</width>\n")
+                    file.write ("          <height>" + str(int(output_config.size[1])) + "</height>\n")
                 file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
                 if 'i' in output_config.mode.name:
                     file.write ("          <flag>interlace</flag>\n")
@@ -524,8 +536,6 @@ class ARandRWidget(Gtk.DrawingArea):
                 i = Gtk.CheckMenuItem("%s" % rotation)
                 i.props.draw_as_radio = True
                 i.props.active = (output_config.rotation == rotation)
-                if rotation == "left" or rotation == "right":       #!!!!! temporarily disable for mutter
-                    i.set_sensitive (False)
                 def _rot_set(_menuitem, output_name, rotation):
                     try:
                         self.set_rotation(output_name, rotation)
