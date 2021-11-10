@@ -247,25 +247,25 @@ class XRandR:
             )
         for index, name in enumerate(self.state.outputs):
             output = self.configuration.outputs[name]
-            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | grep '^\s*Display Product Name' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
+            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | sed -n /----------------/,/----------------/p | grep '^\s*Display Product Name' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
             output.pname = res.stdout.rstrip ("\n")
             if not output.pname:
-                res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | grep '^\s*Model' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
+                res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | sed -n /----------------/,/----------------/p | grep '^\s*Model' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
                 val = res.stdout.rstrip ("\n")
                 if val:
                     output.pname = str.format ('0x{:04x}', int(val))
                 else:
                     output.pname = "unknown"
-            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | grep '^\s*Display Product Serial Number' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
+            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | sed -n /----------------/,/----------------/p | grep '^\s*Display Product Serial Number' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
             output.pserial = res.stdout.rstrip ("\n")
             if not output.pserial:
-                res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | grep '^\s*Serial Number' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
+                res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | sed -n /----------------/,/----------------/p | grep '^\s*Serial Number' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
                 val = res.stdout.rstrip ("\n")
                 if val:
                     output.pserial = str.format ('0x{:08x}', int(val))
                 else:
                     output.pserial = "unknown"
-            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | grep '^\s*Manufacturer' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
+            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | sed -n /----------------/,/----------------/p | grep '^\s*Manufacturer' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
             output.pmanu = res.stdout.rstrip ("\n")
 
     def _load_raw_lines(self):
