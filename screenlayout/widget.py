@@ -205,6 +205,11 @@ class ARandRWidget(Gtk.DrawingArea):
             output_config = self._xrandr.configuration.outputs[output_name]
             output_state = self._xrandr.state.outputs[output_name]
             if output_config.active:
+                grepstring = "'" + output_config.mode.name.split ()[0] + " *" + output_config.mode.name.split ()[1][:-3] + "'"
+                res = subprocess.run ("xrandr --verbose | sed -n /" + output_name + "/,/^\\S/p | edid-decode | grep -m 1 " + grepstring + " | grep -o '[0-9\.]* Hz' | cut -d ' ' -f 1", shell=True, capture_output=True, encoding='utf8')
+                newf = res.stdout.rstrip ('\n')
+                if not newf:
+                    newf = output_config.mode.name.split(" ")[1][:-2]
                 file.write ("    <logicalmonitor>\n")
                 file.write ("      <x>" + str(int(output_config.position[0])) + "</x>\n")
                 file.write ("      <y>" + str(int(output_config.position[1])) + "</y>\n")
@@ -226,7 +231,7 @@ class ARandRWidget(Gtk.DrawingArea):
                 else:
                     file.write ("          <width>" + str(int(output_config.size[0])) + "</width>\n")
                     file.write ("          <height>" + str(int(output_config.size[1])) + "</height>\n")
-                file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
+                file.write ("          <rate>" + newf + "</rate>\n")
                 if 'i' in output_config.mode.name:
                     file.write ("          <flag>interlace</flag>\n")
                 file.write ("        </mode>\n")
