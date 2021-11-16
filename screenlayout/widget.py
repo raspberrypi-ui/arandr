@@ -177,18 +177,10 @@ class ARandRWidget(Gtk.DrawingArea):
         res = subprocess.run ("xinput", shell=True, capture_output=True, encoding='utf8')
         if 'FT5406' in res.stdout:
             tsdriver = 'FT5406 memory based driver'
+        if 'ft5x06' in res.stdout:
+            tsdriver = 'generic ft5x06 (79)'
         if tsdriver is not None and 'DSI-1' in self._xrandr.configuration.outputs:
-            dsix = self._xrandr.configuration.outputs['DSI-1'].position[0]
-            dsiy = self._xrandr.configuration.outputs['DSI-1'].position[1]
-            dsiw = self._xrandr.configuration.outputs['DSI-1'].size[0]
-            dsih = self._xrandr.configuration.outputs['DSI-1'].size[1]
-            scrw = self._xrandr.configuration.virtual[0]
-            scrh = self._xrandr.configuration.virtual[1]
-            c0 = float(dsiw) / float(scrw)
-            c1 = float(dsix) / float(scrw)
-            c2 = float(dsih) / float(scrh)
-            c3 = float(dsiy) / float(scrh)
-            tscmd = 'xinput set-prop "' + tsdriver + '" --type=float "Coordinate Transformation Matrix" ' + str(c0) + ' 0 ' + str(c1) + ' 0 ' + str(c2) + ' ' + str(c3) + ' 0 0 1'
+            tscmd = 'xinput --map-to-output "' + tsdriver + '" DSI-1'
             subprocess.run (tscmd, shell=True)
             file = open ("/usr/share/tssetup.sh", "w")
             file.write ("if xinput | grep -q \"" + tsdriver + "\" ; then " + tscmd + " ; fi")
