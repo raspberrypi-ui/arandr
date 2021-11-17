@@ -281,14 +281,18 @@ class XRandR:
             elif line.startswith(2 * ' '):  # [mode, width, height]
                 line = line.strip()
                 if line.startswith('h:'):
+                    htot = int(line.split()[8])
                     line = line[-len(line):line.index(" start") - len(line)]
                     items[-1][1][-1].append(line[line.rindex(' '):])
                 elif line.startswith('v:'):
+                    vtot = int(line.split()[8])
+                    dfreq = "{:.3f}".format (freq * 1000000 / (htot * vtot))
                     l1 = line[-len(line):line.index(" start")-len(line)]
                     items[-1][1][-1].append(l1[l1.rindex(' '):])
                     l1 = line[-len(line):line.index("Hz")-len(line)]
-                    items[-1][1][-1].append(l1[l1.rindex(' '):]+'Hz')
+                    items[-1][1][-1].append(" " + dfreq + 'Hz')
                 else:  # mode
+                    freq = float(line.split()[2][:-3])
                     items[-1][1].append([line.split()])
             else:
                 items.append([line, []])
