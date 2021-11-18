@@ -166,7 +166,7 @@ msgstr ""
 msgid ""
 "Your configuration does not include an active monitor. Do you want to apply "
 "the configuration?"
-msgstr "Ձեր կարգաբերումը չի գտել ակտիվ հսկողություն։ Ցանկանո՞ւմ ես հաստատել կարգաբերումը։
+msgstr "Ձեր կարգաբերումը չի գտել ակտիվ հսկողություն։ Ցանկանո՞ւմ ես հաստատել կարգաբերումը։"
 
 #: screenlayout/widget.py:327
 msgid "Active"
