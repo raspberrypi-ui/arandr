@@ -1,0 +1,10 @@
+../screenlayout/auxiliary.py
+../screenlayout/demo.py
+../screenlayout/gui.py
+../screenlayout/i18n.py
+../screenlayout/meta.py
+../screenlayout/snap.py
+../screenlayout/widget.py
+../screenlayout/xrandr.py
+../data/arandr.desktop
+../data/fkms/arandr.desktop

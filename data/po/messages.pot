@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR chrysn
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: arandr 0.1.7.1\n"
-"Report-Msgid-Bugs-To: chrysn@fsfe.org\n"
-"POT-Creation-Date: 2015-05-21 10:02+0200\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-11-18 11:36+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,174 +17,137 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: screenlayout/gui.py:117
-msgid "_Layout"
+#: ../../screenlayout/gui.py:116
+msgid "_File"
 msgstr ""
 
-#: screenlayout/gui.py:128
+#: ../../screenlayout/gui.py:129
 msgid "_View"
 msgstr ""
 
-#: screenlayout/gui.py:130
-msgid "_Outputs"
+#: ../../screenlayout/gui.py:131
+msgid "_Configure"
 msgstr ""
 
-#: screenlayout/gui.py:131
+#: ../../screenlayout/gui.py:132
+msgid "_Screens"
+msgstr ""
+
+#: ../../screenlayout/gui.py:133
 msgid "Dummy"
 msgstr ""
 
-#: screenlayout/gui.py:133
-msgid "_System"
-msgstr ""
-
-#: screenlayout/gui.py:134
-msgid "_Keybindings (Metacity)"
-msgstr ""
-
-#: screenlayout/gui.py:136
+#: ../../screenlayout/gui.py:135
 msgid "_Help"
 msgstr ""
 
-#: screenlayout/gui.py:140
+#: ../../screenlayout/gui.py:139
 msgid "1:4"
 msgstr ""
 
-#: screenlayout/gui.py:141
+#: ../../screenlayout/gui.py:140
 msgid "1:8"
 msgstr ""
 
-#: screenlayout/gui.py:142
+#: ../../screenlayout/gui.py:141
 msgid "1:16"
 msgstr ""
 
-#: screenlayout/gui.py:189
+#: ../../screenlayout/gui.py:199
 msgid "Script Properties"
 msgstr ""
 
-#: screenlayout/gui.py:201
+#. notebook.append_page(wacom_options, Gtk.Label(_("Wacom options")))
+#: ../../screenlayout/gui.py:213
 msgid "Script"
 msgstr ""
 
-#: screenlayout/gui.py:217
+#: ../../screenlayout/gui.py:243
+msgid ""
+"Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to "
+"previous setting. Reverting in 10 seconds..."
+msgstr ""
+
+#: ../../screenlayout/gui.py:247
+msgid ""
+"Screen layout updated - changes will take effect on reboot.\n"
+"Click 'Yes' to reboot now, or 'No' to reboot later"
+msgstr ""
+
+#: ../../screenlayout/gui.py:270 ../../screenlayout/gui.py:284
 #, python-format
 msgid ""
 "XRandR failed:\n"
 "%s"
 msgstr ""
 
-#: screenlayout/gui.py:227
+#: ../../screenlayout/gui.py:296
 msgid "Open Layout"
 msgstr ""
 
-#: screenlayout/gui.py:239
+#: ../../screenlayout/gui.py:310
 msgid "Save Layout"
 msgstr ""
 
-#: screenlayout/meta.py:23
+#: ../../screenlayout/meta.py:25
 msgid "ARandR Screen Layout Editor"
 msgstr ""
 
-#. # translators, please translate in the style of "Another XRandR GUI
-#. # (ein weiteres GUI für XRandR)" so users get both the explanation of
-#. # the acronym and a localized version.
-#: screenlayout/meta.py:27
+#. translators, please translate in the style of "Another XRandR GUI
+#. (ein weiteres GUI für XRandR)" so users get both the explanation of
+#. the acronym and a localized version.
+#: ../../screenlayout/meta.py:29
 msgid "Another XRandR GUI"
 msgstr ""
 
-#: screenlayout/metacity.py:53
-msgid "Accelerator"
-msgstr ""
-
-#: screenlayout/metacity.py:54
-msgid "Action"
-msgstr ""
-
-#: screenlayout/metacity.py:120
-msgid "disabled"
-msgstr ""
-
-#: screenlayout/metacity.py:135
-msgid "New accelerator..."
-msgstr ""
-
-#: screenlayout/metacity.py:192
-msgid "no action"
-msgstr ""
-
-#: screenlayout/metacity.py:228
-msgid "incompatible configuration"
-msgstr ""
-
-#: screenlayout/metacity.py:235
-msgid "other application"
-msgstr ""
-
-#: screenlayout/metacity.py:255
-#, python-format
-msgid "No files in %(folder)r. Save a layout first."
-msgstr ""
-
-#: screenlayout/metacity.py:284
-msgid "gconf not available."
-msgstr ""
-
-#: screenlayout/metacity.py:285
-msgid ""
-"In order to configure metacity, you need to have the python gconf module "
-"installed."
-msgstr ""
-
-#: screenlayout/metacity.py:292
-msgid "Keybindings (via Metacity)"
-msgstr ""
-
-#: screenlayout/metacity.py:305
-msgid ""
-"Click on a button in the left column and press a key combination you want to "
-"bind to a certain screen layout. (Use backspace to clear accelerators, "
-"escape to abort editing.) Then, select one or more layouts in the right "
-"column.\n"
-"\n"
-"This will only work if you use metacity or another program reading its "
-"configuration."
-msgstr ""
-
-#: screenlayout/widget.py:61
+#: ../../screenlayout/widget.py:90
 msgid ""
 "Your configuration does not include an active monitor. Do you want to apply "
 "the configuration?"
 msgstr ""
 
-#: screenlayout/widget.py:327
+#: ../../screenlayout/widget.py:476
 msgid "Active"
 msgstr ""
 
-#: screenlayout/widget.py:335
+#: ../../screenlayout/widget.py:485
 msgid "Primary"
 msgstr ""
 
-#: screenlayout/widget.py:349
+#: ../../screenlayout/widget.py:507 ../../screenlayout/widget.py:522
 #, python-format
 msgid "Setting this resolution is not possible here: %s"
 msgstr ""
 
-#: screenlayout/widget.py:362
+#: ../../screenlayout/widget.py:536
 #, python-format
 msgid "This orientation is not possible here: %s"
 msgstr ""
 
-#: screenlayout/widget.py:368
+#: ../../screenlayout/widget.py:543
 msgid "Resolution"
 msgstr ""
 
-#: screenlayout/widget.py:370
+#: ../../screenlayout/widget.py:545
+msgid "Frequency"
+msgstr ""
+
+#: ../../screenlayout/widget.py:547
 msgid "Orientation"
 msgstr ""
 
-#: screenlayout/xrandr.py:275
+#: ../../screenlayout/xrandr.py:368
 msgid "A part of an output is outside the virtual screen."
 msgstr ""
 
-#: screenlayout/xrandr.py:278
+#: ../../screenlayout/xrandr.py:372
 msgid "An output is outside the virtual screen."
+msgstr ""
+
+#: ../../data/arandr.desktop:3 ../../data/fkms/arandr.desktop:3
+msgid "Screen Configuration"
+msgstr ""
+
+#: ../../data/arandr.desktop:4 ../../data/fkms/arandr.desktop:4
+msgid "Screen Settings"
 msgstr ""
