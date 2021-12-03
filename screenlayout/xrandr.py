@@ -267,6 +267,8 @@ class XRandR:
                     output.pserial = "unknown"
             res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | sed -n /----------------/,/----------------/p | grep '^\s*Manufacturer' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
             output.pmanu = res.stdout.rstrip ("\n")
+            if not output.pmanu:
+                output.pmanu = "unknown"
 
     def _load_raw_lines(self):
         output = self._output("--verbose")
