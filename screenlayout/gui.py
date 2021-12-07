@@ -157,8 +157,6 @@ class Application:
             display=randr_display, force_version=force_version,
             window=self.window, gui=self
         )
-        if self.widget.onthefly is False:
-            file="/usr/share/dispsetup.sh"
         if file is None:
             self.filetemplate = self.widget.load_from_x()
         else:
