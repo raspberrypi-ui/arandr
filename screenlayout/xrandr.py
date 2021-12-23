@@ -247,6 +247,12 @@ class XRandR:
             )
         for index, name in enumerate(self.state.outputs):
             output = self.configuration.outputs[name]
+
+            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | sed -n /----------------/,/----------------/p | grep '^\s*Manufacturer' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
+            output.pmanu = res.stdout.rstrip ("\n")
+            if not output.pmanu:
+                output.pmanu = "unknown"
+
             res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | sed -n /----------------/,/----------------/p | grep '^\s*Display Product Name' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
             output.pname = res.stdout.rstrip ("\n")
             if not output.pname:
@@ -256,6 +262,7 @@ class XRandR:
                     output.pname = str.format ('0x{:04x}', int(val))
                 else:
                     output.pname = "unknown"
+
             res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | sed -n /----------------/,/----------------/p | grep '^\s*Display Product Serial Number' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
             output.pserial = res.stdout.rstrip ("\n")
             if not output.pserial:
@@ -264,11 +271,10 @@ class XRandR:
                 if val:
                     output.pserial = str.format ('0x{:08x}', int(val))
                 else:
-                    output.pserial = "unknown"
-            res = subprocess.run ("xrandr --verbose | sed -n /" + name + "/,/^\\S/p | edid-decode | sed -n /----------------/,/----------------/p | grep '^\s*Manufacturer' | cut -d: -f2 | xargs", shell=True, capture_output=True, encoding='utf8')
-            output.pmanu = res.stdout.rstrip ("\n")
-            if not output.pmanu:
-                output.pmanu = "unknown"
+                    if output.pmanu == "unknown" and output.pname == "unknown":
+                        output.pserial = "unknown"
+                    else:
+                        output.pserial = "0x00000000"
 
     def _load_raw_lines(self):
         output = self._output("--verbose")
