@@ -498,8 +498,6 @@ class ARandRWidget(Gtk.DrawingArea):
                     i = Gtk.CheckMenuItem(str(ms[0]))
                     i.props.draw_as_radio = True
                     i.props.active = (cur[0] == ms[0])
-                    if 'i' in str(ms[0]):                           #!!!!! temporarily disable for mutter
-                        i.set_sensitive (False)
                     def _res_set(menuitem, on, mode):
                         try:
                             self.set_resolution(on, mode)
