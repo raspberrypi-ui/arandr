@@ -444,7 +444,12 @@ class XRandR:
                     args.append("--mode")
                     args.append(str(modres[0]))
                     args.append("--rate")
-                    args.append(str(modres[1]).replace('Hz',''))
+                    if 'i' in str(modres[0]):
+                        freq = 2 * float(str(modres[1]).replace('Hz',''))
+                        args.append(str("{:.3f}".format (freq)))
+                        #print (str(modres[1]))
+                    else:
+                        args.append(str(modres[1]).replace('Hz',''))
                     args.append("--pos")
                     args.append(str(output.position))
                     args.append("--rotate")
