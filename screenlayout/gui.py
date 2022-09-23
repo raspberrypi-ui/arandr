@@ -261,11 +261,11 @@ class Application:
 
     def show_confirm (self):
         if self.widget.onthefly is True:
-            self.conf = Gtk.MessageDialog (None, None, Gtk.MessageType.INFO, Gtk.ButtonsType.OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting. Reverting in 10 seconds..."))
+            self.conf = Gtk.MessageDialog (self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting. Reverting in 10 seconds..."))
             self.revert_timer = GLib.timeout_add (10000, self.revert_timeout)
             self.conf.connect ("response", self.conf_response)
         else:
-            self.conf = Gtk.MessageDialog (None, None, Gtk.MessageType.INFO, Gtk.ButtonsType.YES_NO, _("Screen layout updated - changes will take effect on reboot.\nClick 'Yes' to reboot now, or 'No' to reboot later"))
+            self.conf = Gtk.MessageDialog (self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.YES_NO, _("Screen layout updated - changes will take effect on reboot.\nClick 'Yes' to reboot now, or 'No' to reboot later"))
             self.conf.connect ("response", self.reboot_response)
         self.conf.run ()
 
@@ -288,7 +288,7 @@ class Application:
             self.show_confirm()
 
         except Exception as e:
-            d = Gtk.MessageDialog(None, None, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, _("XRandR failed:\n%s")%e)
+            d = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, _("XRandR failed:\n%s")%e)
             d.run()
             d.destroy()
 
