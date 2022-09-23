@@ -128,7 +128,7 @@ class Application:
 
             ("View", None, _("_View")),
 
-            ("Configure", None, _("_Configure")),
+            ("Configure", None, _("_Layout")),
             ("Outputs", None, _("_Screens")),
             ("OutputsDummy", None, _("Dummy")),
 
@@ -172,10 +172,32 @@ class Application:
         vbox = Gtk.VBox()
         menubar = self.uimanager.get_widget('/MenuBar')
         vbox.pack_start(menubar, expand=False, fill=False, padding=0)
-        toolbar = self.uimanager.get_widget('/ToolBar')
-        vbox.pack_start(toolbar, expand=False, fill=False, padding=0)
 
         vbox.add(self.widget)
+
+        bbar = Gtk.ButtonBox ()
+        bbar.set_layout (Gtk.ButtonBoxStyle.END)
+        bbar.set_spacing (5)
+        bbar.set_margin_top (5)
+        bbar.set_margin_bottom (5)
+        bbar.set_margin_left (5)
+        bbar.set_margin_right (5)
+        cbutt = Gtk.Button ()
+        cbutt.set_label (_("_Close"))
+        cbutt.set_use_underline (True)
+        cbutt.connect ("clicked", Gtk.main_quit)
+        bbar.pack_end (cbutt, expand=False, fill=False, padding=0)
+        self.rbutt = Gtk.Button()
+        self.rbutt.set_label (_("_Undo"))
+        self.rbutt.set_use_underline (True)
+        self.rbutt.connect ("clicked", self.do_revert)
+        bbar.pack_end (self.rbutt, expand=False, fill=False, padding=0)
+        abutt = Gtk.Button()
+        abutt.set_label (_("_Apply"))
+        abutt.set_use_underline (True)
+        abutt.connect ("clicked", self.do_apply)
+        bbar.pack_end (abutt, expand=False, fill=False, padding=0)
+        vbox.pack_start(bbar, expand=False, fill=False, padding=0)
 
         window.add(vbox)
         window.show_all()
@@ -220,6 +242,7 @@ class Application:
         ag = self.uimanager.get_action_groups()
         rev = ag[0].get_action ("Revert")
         rev.set_sensitive (state)
+        self.rbutt.set_sensitive (state)
 
     def revert_timeout (self):
         self.do_revert ()
