@@ -180,8 +180,10 @@ class ARandRWidget(Gtk.DrawingArea):
         res = subprocess.run ("xinput", shell=True, capture_output=True, encoding='utf8')
         if 'FT5406' in res.stdout:
             tsdriver = 'FT5406 memory based driver'
-        if 'ft5x06' in res.stdout:
+        if 'ft5x06 (79)' in res.stdout:
             tsdriver = 'generic ft5x06 (79)'
+        if 'ft5x06 (00)' in res.stdout:
+            tsdriver = 'generic ft5x06 (00)'
         if tsdriver is not None and 'DSI-1' in self._xrandr.configuration.outputs:
             tscmd = 'xinput --map-to-output "' + tsdriver + '" DSI-1'
             subprocess.run (tscmd, shell=True)
