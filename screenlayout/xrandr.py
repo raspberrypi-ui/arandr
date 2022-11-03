@@ -86,7 +86,7 @@ class XRandR:
             raise FileLoadError('Not a shell script.')
 
         xrandrlines = [i for i, l in enumerate(
-            lines) if l.strip().startswith('xrandr ')]
+            lines) if l.strip().startswith('wlr-randr ')]
         if not xrandrlines:
             raise FileLoadError('No recognized xrandr command in this shell script.')
         if len(xrandrlines) > 1:
@@ -100,7 +100,7 @@ class XRandR:
         self.load_from_x()
 
         args = BetterList(commandline.split(" "))
-        if args.pop(0) != 'xrandr':
+        if args.pop(0) != 'wlr-randr':
             raise FileSyntaxError()
         # first part is empty, exclude empty parts
         options = dict((a[0], a[1:]) for a in args.split('--output') if a)
@@ -123,29 +123,21 @@ class XRandR:
                     for i in range(len(output_argument) // 2)
                 ]
                 mode = ''
-                rate = ''
                 for part in parts:
                     if part[0] == '--mode':
-                        mode = part[1]
-                        if mode and rate:
+                        mode = part[1].replace('@', ' ')
+                        if mode:
                             for namedmode in output_state.modes:
-                                if namedmode.name == mode + ' ' + rate + 'Hz':
+                                if namedmode.name == mode:
                                     output.mode = namedmode
                                     break
                             else:
-                                raise FileLoadError("Not a known mode: %s" % (mode + ' ' + rate + 'Hz'))
-                    elif part[0] == '--rate':
-                        rate = part[1]
-                        if mode and rate:
-                            for namedmode in output_state.modes:
-                                if namedmode.name == mode + ' ' + rate + 'Hz':
-                                    output.mode = namedmode
-                                    break
-                            else:
-                                raise FileLoadError("Not a known mode: %s" % (mode + ' ' + rate + 'Hz'))
+                                raise FileLoadError("Not a known mode: %s" % (mode))
                     elif part[0] == '--pos':
-                        output.position = Position(part[1])
-                    elif part[0] == '--rotate':
+                        poslist = part[1].split(',')
+                        postup = tuple (int (item) for item in poslist)
+                        output.position = Position(postup)
+                    elif part[0] == '--transform':
                         if part[1] not in ROTATIONS:
                             raise FileSyntaxError()
                         output.rotation = Rotation(part[1])
@@ -333,7 +325,7 @@ class XRandR:
         template = '\n'.join(template) + '\n'
 
         data = {
-            'xrandr': "xrandr " + " ".join(self.configuration.commandlineargs())
+            'xrandr': "wlr-randr " + " ".join(self.configuration.commandlineargs())
         }
         if additional:
             data.update(additional)
