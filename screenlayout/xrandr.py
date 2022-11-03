@@ -47,15 +47,7 @@ class XRandR:
         if display:
             self.environ['DISPLAY'] = display
 
-        version_output = self._output("--version")
-        supported_versions = ["1.2", "1.3", "1.4", "1.5"]
-        if not any(x in version_output for x in supported_versions) and not force_version:
-            raise Exception("XRandR %s required." %
-                            "/".join(supported_versions))
-
         self.features = set()
-        if " 1.2" not in version_output:
-            self.features.add(Feature.PRIMARY)
 
     def _get_outputs(self):
         assert self.state.outputs.keys() == self.configuration.outputs.keys()
@@ -66,7 +58,7 @@ class XRandR:
 
     def _output(self, *args):
         proc = subprocess.Popen(
-            ("xrandr",) + args,
+            ("wlr-randr",) + args,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.environ
         )
         ret, err = proc.communicate()
@@ -165,9 +157,9 @@ class XRandR:
         self.configuration = self.Configuration(self)
         self.state = self.State()
 
-        screenline, items = self._load_raw_lines()
+        currentmode, items = self._load_raw_lines()
 
-        self._load_parse_screenline(screenline)
+        self._setup_screen (currentmode)
 
         for headline, details in items:
             if headline.startswith("  "):
@@ -209,13 +201,12 @@ class XRandR:
 
             output.rotations = set()
             for rotation in ROTATIONS:
-                if rotation in headline:
-                    output.rotations.add(rotation)
+                output.rotations.add(rotation)
 
             currentname = None
             for detail, w, h, f in details:
                 name, _mode_raw = detail[0:2]
-                name = name + f
+                name = name + ' ' + f
                 mode_id = _mode_raw.strip("()")
                 try:
                     size = Size([int(w), int(h)])
@@ -223,7 +214,7 @@ class XRandR:
                     raise Exception(
                         "Output %s parse error: modename %s modeid %s." % (output.name, name, mode_id)
                     )
-                if "*current" in detail:
+                if currentmode == name:
                     currentname = name
                 for x in ["+preferred", "*current"]:
                     if x in detail:
@@ -277,50 +268,54 @@ class XRandR:
                         output.pserial = "0x00000000"
 
     def _load_raw_lines(self):
-        output = self._output("--verbose")
+        output = self._output("")
         items = []
-        screenline = None
         for line in output.split('\n'):
-            if line.startswith("Screen "):
-                assert screenline is None
-                screenline = line
-            elif line.startswith('\t'):
-                continue
-            elif line.startswith(2 * ' '):  # [mode, width, height]
-                line = line.strip()
-                if line.startswith('h:'):
-                    htot = int(line.split()[8])
-                    line = line[-len(line):line.index(" start") - len(line)]
-                    items[-1][1][-1].append(line[line.rindex(' '):])
-                elif line.startswith('v:'):
-                    vtot = int(line.split()[8])
-                    dfreq = "{:.3f}".format (freq * 1000000 / (htot * vtot))
-                    l1 = line[-len(line):line.index(" start")-len(line)]
-                    items[-1][1][-1].append(l1[l1.rindex(' '):])
-                    l1 = line[-len(line):line.index("Hz")-len(line)]
-                    items[-1][1][-1].append(" " + dfreq + 'Hz')
-                else:  # mode
-                    freq = float(line.split()[2][:-3])
-                    items[-1][1].append([line.split()])
+            if len (line) > 0 and not line.startswith(' '):
+                curout = (line.split())[0]
+                displ = []
+                displ.append (line)
+                modes = []
             else:
-                items.append([line, []])
-        return screenline, items
+                res = line.replace (" px, ", " ").replace( "x", " ").split()
+                if 'px' in line :
+                    modes.append ([line.strip().split()])
+                    modes[-1].append (res[0])
+                    modes[-1].append (res[1])
+                    modes[-1].append (res[2])
+                    if '(current)' in line:
+                        curw = res[0]
+                        curh = res[1]
+                        curf = res[2]
+                elif len (res) == 2:
+                    if res[0] == 'Position:':
+                        pos = res[1].split(',')
+                        curx = pos[0]
+                        cury = pos[1]
+                    elif res[0] == 'Transform:':
+                        if res[1] == 'normal':
+                            curt = 'normal'
+                        elif res[1] == '90':
+                            curt = 'left'
+                        elif res[1] == '180':
+                            curt = 'inverted'
+                        elif res[1] == '270':
+                            curt = 'right'
+                    elif res[0] == 'Scale:':
+                        displ.append(modes)
+                        items.append(displ)
+        items[0][0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt
+        current = str(curw) + 'x' + str(curh) + ' ' + str(curf)
+        return current, items
 
-    def _load_parse_screenline(self, screenline):
-        assert screenline is not None
-        ssplit = screenline.split(" ")
-
-        ssplit_expect = ["Screen", None, "minimum", None, "x", None,
-                         "current", None, "x", None, "maximum", None, "x", None]
-        assert all(a == b for (a, b) in zip(
-            ssplit, ssplit_expect) if b is not None)
-
+    def _setup_screen(self, curmode):
         self.state.virtual = self.state.Virtual(
-            min_mode=Size((int(ssplit[3]), int(ssplit[5][:-1]))),
-            max_mode=Size((int(ssplit[11]), int(ssplit[13])))
+            min_mode=Size((int(320), int(200))),
+            max_mode=Size((int(7680), int(7680)))
         )
+        res = (curmode.split())[0].split('x')
         self.configuration.virtual = Size(
-            (int(ssplit[7]), int(ssplit[9][:-1]))
+            (int(res[0]), int(res[1]))
         )
 
     #################### saving ####################
@@ -442,18 +437,19 @@ class XRandR:
                             args.append("--primary")
                     modres=str(output.mode.name).split(" ")
                     args.append("--mode")
-                    args.append(str(modres[0]))
-                    args.append("--rate")
-                    if 'i' in str(modres[0]):
-                        freq = 2 * float(str(modres[1]).replace('Hz',''))
-                        args.append(str("{:.3f}".format (freq)))
-                        #print (str(modres[1]))
-                    else:
-                        args.append(str(modres[1]).replace('Hz',''))
+                    args.append(str(modres[0]) + '@' + modres[1])
                     args.append("--pos")
-                    args.append(str(output.position))
-                    args.append("--rotate")
-                    args.append(output.rotation)
+                    args.append(str(output.position).replace('x',','))
+                    args.append("--transform")
+                    if output.rotation == 'normal':
+                        args.append('normal')
+                    elif output.rotation == 'left':
+                        args.append('90')
+                    elif output.rotation == 'inverted':
+                        args.append('180')
+                    elif output.rotation == 'right':
+                        args.append('270')
+
             return args
 
         class OutputConfiguration:
