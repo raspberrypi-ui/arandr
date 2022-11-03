@@ -23,6 +23,7 @@ import os
 import subprocess
 import stat
 import shutil
+import configparser
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -155,6 +156,7 @@ class ARandRWidget(Gtk.DrawingArea):
         #self.save_dispsetup_sh()
         self.save_touchscreen()
         #self.save_monitors_xml()
+        self.save_wayfire()
         if self.onthefly is True:
             self.load_from_x()
         else:
@@ -174,6 +176,19 @@ class ARandRWidget(Gtk.DrawingArea):
         file.write ("if [ -e /usr/share/ovscsetup.sh ] ; then\n. /usr/share/ovscsetup.sh\nfi\n");
         file.write ("exit 0");
         file.close ()
+
+    def save_wayfire(self):
+        config = configparser.ConfigParser ()
+        config.read (os.path.expanduser ('~/.config/wayfire.ini'))
+        for output_name in self._xrandr.outputs:
+            output_config = self._xrandr.configuration.outputs[output_name]
+            section = 'output:' + output_name
+            key = output_config.mode.name.replace(' ','@').replace('.','')
+            key = key[:len (key) - 3]
+            config[section] = {}
+            config[section]['mode'] = key
+        with open (os.path.expanduser ('~/.config/wayfire.ini'), 'w') as configfile:
+            config.write (configfile)
 
     def save_touchscreen(self):
         tsdriver = None
