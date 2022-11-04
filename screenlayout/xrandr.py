@@ -358,7 +358,7 @@ class XRandR:
                     modes[-1].append (res[0])
                     modes[-1].append (res[1])
                     modes[-1].append (res[2])
-                    if '(current)' in line:
+                    if 'current' in line:
                         curw = res[0]
                         curh = res[1]
                         curf = res[2]
