@@ -172,7 +172,7 @@ class XRandR:
         self.configuration = self.Configuration(self)
         self.state = self.State()
 
-        if (self.command == "wlr-randr"):
+        if self.command == 'wlr-randr':
             currentmode, items = self._load_raw_lines_wayfire()
             self._setup_screen (currentmode)
         else:

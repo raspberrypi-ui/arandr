@@ -157,10 +157,12 @@ class ARandRWidget(Gtk.DrawingArea):
         if self.onthefly is True:
             self._xrandr.save_to_x()
         self.gui.enable_revert (True)
-        #self.save_dispsetup_sh()
+        if self.command is 'wlr-randr':
+            self.save_wayfire()
+        else:
+            self.save_dispsetup_sh()
+            self.save_monitors_xml()
         self.save_touchscreen()
-        #self.save_monitors_xml()
-        self.save_wayfire()
         if self.onthefly is True:
             self.load_from_x()
         else:

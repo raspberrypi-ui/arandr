@@ -275,7 +275,7 @@ class Application:
             return
 
         try:
-            current = XRandR()
+            current = XRandR(command=self.widget.command)
             if self.widget.onthefly is True:
                 current.load_from_x()
             else:
