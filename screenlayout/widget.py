@@ -187,6 +187,16 @@ class ARandRWidget(Gtk.DrawingArea):
             key = key[:len (key) - 3]
             config[section] = {}
             config[section]['mode'] = key
+            config[section]['position'] = str(int(output_config.position[0])) + ',' + str(int(output_config.position[1]))
+            if output_config.rotation == 'left':
+                rot = '90'
+            elif output_config.rotation == 'inverted':
+                rot = '180'
+            elif output_config.rotation == 'right':
+                rot = '270'
+            else:
+                rot = 'normal'
+            config[section]['transform'] = rot
         with open (os.path.expanduser ('~/.config/wayfire.ini'), 'w') as configfile:
             config.write (configfile)
 
