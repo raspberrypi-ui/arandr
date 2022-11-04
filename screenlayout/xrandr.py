@@ -39,15 +39,27 @@ class XRandR:
 
     configuration = None
     state = None
+    command = 'xrandr'
 
-    def __init__(self, display=None, force_version=False):
+    def __init__(self, display=None, force_version=False, command='xrandr'):
         """Create proxy object and check for xrandr at `display`. Fail with
         untested versions unless `force_version` is True."""
+        self.command = command
         self.environ = dict(os.environ)
         if display:
             self.environ['DISPLAY'] = display
 
+        if command == 'xrandr':
+            version_output = self._output("--version")
+            supported_versions = ["1.2", "1.3", "1.4", "1.5"]
+            if not any(x in version_output for x in supported_versions) and not force_version:
+                raise Exception("XRandR %s required." %
+                            "/".join(supported_versions))
+
         self.features = set()
+        if command == 'xrandr':
+            if " 1.2" not in version_output:
+                self.features.add(Feature.PRIMARY)
 
     def _get_outputs(self):
         assert self.state.outputs.keys() == self.configuration.outputs.keys()
@@ -58,7 +70,7 @@ class XRandR:
 
     def _output(self, *args):
         proc = subprocess.Popen(
-            ("wlr-randr",) + args,
+            (self.command,) + args,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.environ
         )
         ret, err = proc.communicate()
@@ -86,12 +98,15 @@ class XRandR:
             raise FileLoadError('Not a shell script.')
 
         xrandrlines = [i for i, l in enumerate(
-            lines) if l.strip().startswith('wlr-randr ')]
+            lines) if l.strip().startswith(self.command + ' ')]
         if not xrandrlines:
             raise FileLoadError('No recognized xrandr command in this shell script.')
         if len(xrandrlines) > 1:
             raise FileLoadError('More than one xrandr line in this shell script.')
-        self._load_from_commandlineargs(lines[xrandrlines[0]].strip())
+        if self.command == 'wlr-randr':
+            self._load_from_commandlineargs_wayfire(lines[xrandrlines[0]].strip())
+        else:
+            self._load_from_commandlineargs(lines[xrandrlines[0]].strip())
         lines[xrandrlines[0]] = '%(xrandr)s'
 
         return lines
@@ -100,7 +115,7 @@ class XRandR:
         self.load_from_x()
 
         args = BetterList(commandline.split(" "))
-        if args.pop(0) != 'wlr-randr':
+        if args.pop(0) != 'xrandr':
             raise FileSyntaxError()
         # first part is empty, exclude empty parts
         options = dict((a[0], a[1:]) for a in args.split('--output') if a)
@@ -123,21 +138,29 @@ class XRandR:
                     for i in range(len(output_argument) // 2)
                 ]
                 mode = ''
+                rate = ''
                 for part in parts:
                     if part[0] == '--mode':
-                        mode = part[1].replace('@', ' ')
-                        if mode:
+                        mode = part[1]
+                        if mode and rate:
                             for namedmode in output_state.modes:
-                                if namedmode.name == mode:
+                                if namedmode.name == mode + ' ' + rate + 'Hz':
                                     output.mode = namedmode
                                     break
                             else:
-                                raise FileLoadError("Not a known mode: %s" % (mode))
+                                raise FileLoadError("Not a known mode: %s" % (mode + ' ' + rate + 'Hz'))
+                    elif part[0] == '--rate':
+                        rate = part[1]
+                        if mode and rate:
+                            for namedmode in output_state.modes:
+                                if namedmode.name == mode + ' ' + rate + 'Hz':
+                                    output.mode = namedmode
+                                    break
+                            else:
+                                raise FileLoadError("Not a known mode: %s" % (mode + ' ' + rate + 'Hz'))
                     elif part[0] == '--pos':
-                        poslist = part[1].split(',')
-                        postup = tuple (int (item) for item in poslist)
-                        output.position = Position(postup)
-                    elif part[0] == '--transform':
+                        output.position = Position(part[1])
+                    elif part[0] == '--rotate':
                         if part[1] not in ROTATIONS:
                             raise FileSyntaxError()
                         output.rotation = Rotation(part[1])
@@ -149,9 +172,12 @@ class XRandR:
         self.configuration = self.Configuration(self)
         self.state = self.State()
 
-        currentmode, items = self._load_raw_lines()
-
-        self._setup_screen (currentmode)
+        if (self.command == "wlr-randr"):
+            currentmode, items = self._load_raw_lines_wayfire()
+            self._setup_screen (currentmode)
+        else:
+            screenline, items = self._load_raw_lines()
+            self._load_parse_screenline(screenline)
 
         for headline, details in items:
             if headline.startswith("  "):
@@ -193,12 +219,16 @@ class XRandR:
 
             output.rotations = set()
             for rotation in ROTATIONS:
-                output.rotations.add(rotation)
+                if self.command == 'wlr-randr' or rotation in headline:
+                    output.rotations.add(rotation)
 
             currentname = None
             for detail, w, h, f in details:
                 name, _mode_raw = detail[0:2]
-                name = name + ' ' + f
+                if self.command == 'wlr-randr':
+                    name = name + ' ' + f
+                else:
+                    name = name + f
                 mode_id = _mode_raw.strip("()")
                 try:
                     size = Size([int(w), int(h)])
@@ -206,8 +236,12 @@ class XRandR:
                     raise Exception(
                         "Output %s parse error: modename %s modeid %s." % (output.name, name, mode_id)
                     )
-                if currentmode == name:
-                    currentname = name
+                if self.command == 'wlr-randr':
+                    if currentmode == name:
+                        currentname = name
+                else:
+                    if "*current" in detail:
+                        currentname = name
                 for x in ["+preferred", "*current"]:
                     if x in detail:
                         detail.remove(x)
@@ -259,7 +293,56 @@ class XRandR:
                     else:
                         output.pserial = "0x00000000"
 
-    def _load_raw_lines(self):
+    def _load_from_commandlineargs_wayfire(self, commandline):
+        self.load_from_x()
+
+        args = BetterList(commandline.split(" "))
+        if args.pop(0) != 'wlr-randr':
+            raise FileSyntaxError()
+        # first part is empty, exclude empty parts
+        options = dict((a[0], a[1:]) for a in args.split('--output') if a)
+
+        for output_name, output_argument in options.items():
+            output = self.configuration.outputs[output_name]
+            output_state = self.state.outputs[output_name]
+            output.primary = False
+            if output_argument == ['--off']:
+                output.active = False
+            else:
+                if '--primary' in output_argument:
+                    if Feature.PRIMARY in self.features:
+                        output.primary = True
+                    output_argument.remove('--primary')
+                if len(output_argument) % 2 != 0:
+                    raise FileSyntaxError()
+                parts = [
+                    (output_argument[2 * i], output_argument[2 * i + 1])
+                    for i in range(len(output_argument) // 2)
+                ]
+                mode = ''
+                for part in parts:
+                    if part[0] == '--mode':
+                        mode = part[1].replace('@', ' ')
+                        if mode:
+                            for namedmode in output_state.modes:
+                                if namedmode.name == mode:
+                                    output.mode = namedmode
+                                    break
+                            else:
+                                raise FileLoadError("Not a known mode: %s" % (mode))
+                    elif part[0] == '--pos':
+                        poslist = part[1].split(',')
+                        postup = tuple (int (item) for item in poslist)
+                        output.position = Position(postup)
+                    elif part[0] == '--transform':
+                        if part[1] not in ROTATIONS:
+                            raise FileSyntaxError()
+                        output.rotation = Rotation(part[1])
+                    else:
+                        raise FileSyntaxError()
+                output.active = True
+
+    def _load_raw_lines_wayfire(self):
         output = self._output("")
         items = []
         for line in output.split('\n'):
@@ -310,6 +393,53 @@ class XRandR:
             (int(res[0]), int(res[1]))
         )
 
+    def _load_raw_lines(self):
+        output = self._output("--verbose")
+        items = []
+        screenline = None
+        for line in output.split('\n'):
+            if line.startswith("Screen "):
+                assert screenline is None
+                screenline = line
+            elif line.startswith('\t'):
+                continue
+            elif line.startswith(2 * ' '):  # [mode, width, height]
+                line = line.strip()
+                if line.startswith('h:'):
+                    htot = int(line.split()[8])
+                    line = line[-len(line):line.index(" start") - len(line)]
+                    items[-1][1][-1].append(line[line.rindex(' '):])
+                elif line.startswith('v:'):
+                    vtot = int(line.split()[8])
+                    dfreq = "{:.3f}".format (freq * 1000000 / (htot * vtot))
+                    l1 = line[-len(line):line.index(" start")-len(line)]
+                    items[-1][1][-1].append(l1[l1.rindex(' '):])
+                    l1 = line[-len(line):line.index("Hz")-len(line)]
+                    items[-1][1][-1].append(" " + dfreq + 'Hz')
+                else:  # mode
+                    freq = float(line.split()[2][:-3])
+                    items[-1][1].append([line.split()])
+            else:
+                items.append([line, []])
+        return screenline, items
+
+    def _load_parse_screenline(self, screenline):
+        assert screenline is not None
+        ssplit = screenline.split(" ")
+
+        ssplit_expect = ["Screen", None, "minimum", None, "x", None,
+                         "current", None, "x", None, "maximum", None, "x", None]
+        assert all(a == b for (a, b) in zip(
+            ssplit, ssplit_expect) if b is not None)
+
+        self.state.virtual = self.state.Virtual(
+            min_mode=Size((int(ssplit[3]), int(ssplit[5][:-1]))),
+            max_mode=Size((int(ssplit[11]), int(ssplit[13])))
+        )
+        self.configuration.virtual = Size(
+            (int(ssplit[7]), int(ssplit[9][:-1]))
+        )
+
     #################### saving ####################
 
     def save_to_shellscript_string(self, template=None, additional=None):
@@ -324,9 +454,14 @@ class XRandR:
             template = self.DEFAULTTEMPLATE
         template = '\n'.join(template) + '\n'
 
-        data = {
-            'xrandr': "wlr-randr " + " ".join(self.configuration.commandlineargs())
-        }
+        if self.command == 'wlr-randr':
+            data = {
+                'xrandr': 'wlr-randr ' + " ".join(self.configuration.commandlineargswayfire())
+            }
+        else:
+            data = {
+                'xrandr': 'xrandr ' + " ".join(self.configuration.commandlineargs())
+            }
         if additional:
             data.update(additional)
 
@@ -334,7 +469,10 @@ class XRandR:
 
     def save_to_x(self):
         self.check_configuration()
-        self._run(*self.configuration.commandlineargs())
+        if self.command == 'wlr-randr':
+            self._run(*self.configuration.commandlineargswayfire())
+        else:
+            self._run(*self.configuration.commandlineargs())
 
     def check_configuration(self):
         vmax = self.state.virtual.max
@@ -417,6 +555,33 @@ class XRandR:
             )
 
         def commandlineargs(self):
+            args = []
+            for output_name, output in self.outputs.items():
+                args.append("--output")
+                args.append(output_name)
+                if not output.active:
+                    args.append("--off")
+                else:
+                    if Feature.PRIMARY in self._xrandr.features:
+                        if output.primary:
+                            args.append("--primary")
+                    modres=str(output.mode.name).split(" ")
+                    args.append("--mode")
+                    args.append(str(modres[0]))
+                    args.append("--rate")
+                    if 'i' in str(modres[0]):
+                        freq = 2 * float(str(modres[1]).replace('Hz',''))
+                        args.append(str("{:.3f}".format (freq)))
+                        #print (str(modres[1]))
+                    else:
+                        args.append(str(modres[1]).replace('Hz',''))
+                    args.append("--pos")
+                    args.append(str(output.position))
+                    args.append("--rotate")
+                    args.append(output.rotation)
+            return args
+
+        def commandlineargswayfire(self):
             args = []
             for output_name, output in self.outputs.items():
                 args.append("--output")

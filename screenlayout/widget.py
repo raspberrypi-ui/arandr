@@ -57,6 +57,10 @@ class ARandRWidget(Gtk.DrawingArea):
         if os.system ('ps ax | grep -v grep | grep -q mutter') == 0:
             self.onthefly = False
 
+        self.command = "xrandr"
+        if os.system ('ps ax | grep -v grep | grep -q wayfire') == 0:
+            self.command = "wlr-randr"
+
         self.window = window
         self._factor = factor
 
@@ -69,7 +73,7 @@ class ARandRWidget(Gtk.DrawingArea):
 
         self.setup_draganddrop()
 
-        self._xrandr = XRandR(display=display, force_version=force_version)
+        self._xrandr = XRandR(display=display, force_version=force_version, command=self.command)
         self.gui = gui
 
         self.connect('draw', self.do_expose_event)
