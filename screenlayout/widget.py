@@ -157,7 +157,7 @@ class ARandRWidget(Gtk.DrawingArea):
         if self.onthefly is True:
             self._xrandr.save_to_x()
         self.gui.enable_revert (True)
-        if self.command is 'wlr-randr':
+        if self.command == 'wlr-randr':
             self.save_wayfire()
         else:
             self.save_dispsetup_sh()
@@ -185,7 +185,8 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def save_wayfire(self):
         config = configparser.ConfigParser ()
-        config.read (os.path.expanduser ('~/.config/wayfire.ini'))
+        path = os.path.expanduser ('~/.config/wayfire.ini')
+        config.read (path)
         for output_name in self._xrandr.outputs:
             output_config = self._xrandr.configuration.outputs[output_name]
             section = 'output:' + output_name
@@ -203,8 +204,9 @@ class ARandRWidget(Gtk.DrawingArea):
             else:
                 rot = 'normal'
             config[section]['transform'] = rot
-        with open (os.path.expanduser ('~/.config/wayfire.ini'), 'w') as configfile:
+        with open (path, 'w') as configfile:
             config.write (configfile)
+        shutil.chown (path, os.environ['SUDO_USER'], os.environ['SUDO_USER'])
 
     def save_touchscreen(self):
         tsdriver = None
@@ -226,7 +228,7 @@ class ARandRWidget(Gtk.DrawingArea):
                 os.remove ("/usr/share/tssetup.sh")
 
     def save_monitors_xml(self):
-        path = os.path.expanduser ('~' + os.environ['SUDO_USER']) + '/.config/monitors.xml'
+        path = os.path.expanduser ('~/.config/monitors.xml')
         file = open (path, "w")
         file.write ("<monitors version=\"2\">\n  <configuration>\n")
         for output_name in self._xrandr.outputs:
