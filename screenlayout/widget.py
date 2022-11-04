@@ -358,7 +358,7 @@ class ARandRWidget(Gtk.DrawingArea):
         context.set_source_rgb(0, 0, 0)
         context.rectangle(0, 0, *self.window.get_size())
         context.fill()
-        context.save()
+        #context.save() !!! this causes titlebar corruption under wayfire
 
         context.scale(1 / self.factor, 1 / self.factor)
         context.set_line_width(self.factor * 1.5)
