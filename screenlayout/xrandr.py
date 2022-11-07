@@ -223,6 +223,7 @@ class XRandR:
                     output.rotations.add(rotation)
 
             currentname = None
+            curmode = hsplit[2].split('+')[0] + ' ' + hsplit[5]
             for detail, w, h, f in details:
                 name, _mode_raw = detail[0:2]
                 if self.command == 'wlr-randr':
@@ -237,7 +238,7 @@ class XRandR:
                         "Output %s parse error: modename %s modeid %s." % (output.name, name, mode_id)
                     )
                 if self.command == 'wlr-randr':
-                    if currentmode == name:
+                    if curmode == name:
                         currentname = name
                 else:
                     if "*current" in detail:
@@ -377,9 +378,9 @@ class XRandR:
                         elif res[1] == '270':
                             curt = 'right'
                     elif res[0] == 'Scale:':
+                        displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
                         displ.append(modes)
                         items.append(displ)
-        items[0][0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt
         current = str(curw) + 'x' + str(curh) + ' ' + str(curf)
         return current, items
 

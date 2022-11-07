@@ -612,7 +612,7 @@ class ARandRWidget(Gtk.DrawingArea):
         self._draggingoutput = None
         self.connect('drag-begin', self._dragbegin_cb)
         self.connect('drag-motion', self._dragmotion_cb)
-        self.connect('drag-drop', self._dragdrop_cb)
+        #self.connect('drag-drop', self._dragdrop_cb)
         self.connect('drag-end', self._dragend_cb)
 
         self._lastclick = (0, 0)
@@ -675,6 +675,16 @@ class ARandRWidget(Gtk.DrawingArea):
         context.finish(True, False, time)
 
     def _dragend_cb(self, widget, context):
+        try:
+            self.set_position(
+                self._draggingoutput,
+                self._xrandr.configuration.outputs[self._draggingoutput].tentative_position
+            )
+        except InadequateConfiguration:
+            context.finish(False, False, time)
+
+        context.finish(True, False, time)
+
         try:
             del self._xrandr.configuration.outputs[self._draggingoutput].tentative_position
         except (KeyError, AttributeError):
