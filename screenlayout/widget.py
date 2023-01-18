@@ -183,9 +183,8 @@ class ARandRWidget(Gtk.DrawingArea):
         file.write ("exit 0");
         file.close ()
 
-    def save_wayfire(self):
+    def write_wayfire_config(self,path):
         config = configparser.ConfigParser ()
-        path = os.path.expanduser ('~/.config/wayfire.ini')
         config.read (path)
         for output_name in self._xrandr.outputs:
             output_config = self._xrandr.configuration.outputs[output_name]
@@ -206,7 +205,12 @@ class ARandRWidget(Gtk.DrawingArea):
             config[section]['transform'] = rot
         with open (path, 'w') as configfile:
             config.write (configfile)
+
+    def save_wayfire(self):
+        path = os.path.expanduser ('~/.config/wayfire.ini')
+        self.write_wayfire_config (path)
         shutil.chown (path, os.environ['SUDO_USER'], os.environ['SUDO_USER'])
+        self.write_wayfire_config ('/etc/wayfire/greeter.ini')
 
     def save_touchscreen(self):
         tsdriver = None
