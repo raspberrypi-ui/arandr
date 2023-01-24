@@ -336,9 +336,16 @@ class XRandR:
                         postup = tuple (int (item) for item in poslist)
                         output.position = Position(postup)
                     elif part[0] == '--transform':
-                        if part[1] not in ROTATIONS:
+                        if part[1] == 'normal':
+                            output.rotation = Rotation('normal')
+                        elif part[1] == '90':
+                            output.rotation = Rotation('left')
+                        elif part[1] == '180':
+                            output.rotation = Rotation('inverted')
+                        elif part[1] == '270':
+                            output.rotation = Rotation('right')
+                        else:
                             raise FileSyntaxError()
-                        output.rotation = Rotation(part[1])
                     else:
                         raise FileSyntaxError()
                 output.active = True
