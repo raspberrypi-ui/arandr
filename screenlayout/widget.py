@@ -162,7 +162,7 @@ class ARandRWidget(Gtk.DrawingArea):
         else:
             self.save_dispsetup_sh()
             self.save_monitors_xml()
-        self.save_touchscreen()
+            self.save_touchscreen()
         if self.onthefly is True:
             self.load_from_x()
         else:
@@ -203,6 +203,17 @@ class ARandRWidget(Gtk.DrawingArea):
             else:
                 rot = 'normal'
             config[section]['transform'] = rot
+        res = subprocess.run ("libinput list-devices | grep -i ft5 | sed 's/Device:[ \t]*//'", shell=True, capture_output=True, encoding='utf8')
+        if 'FT5406' in res.stdout:
+            tsdriver = 'FT5406 memory based driver'
+        if 'ft5x06 (79)' in res.stdout:
+            tsdriver = 'generic ft5x06 (79)'
+        if 'ft5x06 (00)' in res.stdout:
+            tsdriver = 'generic ft5x06 (00)'
+        if tsdriver is not None and 'DSI-1' in self._xrandr.configuration.outputs:
+            section = "input-device:" + tsdriver
+            config[section] = {}
+            config[section]["output"] = "DSI-1"
         with open (path, 'w') as configfile:
             config.write (configfile)
 
