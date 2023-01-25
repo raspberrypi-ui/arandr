@@ -675,10 +675,10 @@ class ARandRWidget(Gtk.DrawingArea):
                 self._xrandr.configuration.outputs[self._draggingoutput].tentative_position
             )
         except InadequateConfiguration:
-            context.finish(False, False, time)
+            context.finish(False, False, 0)
             # raise # snapping back to the original position should be enought feedback
 
-        context.finish(True, False, time)
+        context.finish(True, False, 0)
 
     def _dragend_cb(self, widget, context):
         try:
@@ -687,9 +687,9 @@ class ARandRWidget(Gtk.DrawingArea):
                 self._xrandr.configuration.outputs[self._draggingoutput].tentative_position
             )
         except InadequateConfiguration:
-            context.finish(False, False, time)
+            context.finish(False, False, 0)
 
-        context.finish(True, False, time)
+        context.finish(True, False, 0)
 
         try:
             del self._xrandr.configuration.outputs[self._draggingoutput].tentative_position
