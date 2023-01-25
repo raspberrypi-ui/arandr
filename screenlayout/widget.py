@@ -208,7 +208,7 @@ class ARandRWidget(Gtk.DrawingArea):
                 rot = 'normal'
             config[section]['transform'] = rot
         tsdriver = self.ts_driver()
-        if tsdriver is not None and 'DSI-1' in self._xrandr.configuration.outputs:
+        if tsdriver and 'DSI-1' in self._xrandr.configuration.outputs:
             section = "input-device:" + tsdriver
             config[section] = {}
             config[section]["output"] = "DSI-1"
@@ -223,7 +223,7 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def save_touchscreen(self):
         tsdriver = self.ts_driver()
-        if tsdriver is not None and 'DSI-1' in self._xrandr.configuration.outputs:
+        if tsdriver and 'DSI-1' in self._xrandr.configuration.outputs:
             tscmd = 'xinput --map-to-output "' + tsdriver + '" DSI-1'
             subprocess.run (tscmd, shell=True)
             file = open ("/usr/share/tssetup.sh", "w")
