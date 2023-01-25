@@ -183,6 +183,10 @@ class ARandRWidget(Gtk.DrawingArea):
         file.write ("exit 0");
         file.close ()
 
+    def ts_driver(self):
+       res = subprocess.run ("libinput list-devices | tr \\\\n @ | sed 's/@@/\\\n/g' | grep \"Capabilities:     touch\" | sed 's/Device:[ \\\t]*//' | cut -d @ -f 1", shell=True, capture_output=True, encoding='utf8')
+       return res.stdout.rstrip ("\n")
+
     def write_wayfire_config(self,path):
         config = configparser.ConfigParser ()
         config.read (path)
@@ -203,13 +207,7 @@ class ARandRWidget(Gtk.DrawingArea):
             else:
                 rot = 'normal'
             config[section]['transform'] = rot
-        res = subprocess.run ("libinput list-devices | grep -i ft5 | sed 's/Device:[ \t]*//'", shell=True, capture_output=True, encoding='utf8')
-        if 'FT5406' in res.stdout:
-            tsdriver = 'FT5406 memory based driver'
-        if 'ft5x06 (79)' in res.stdout:
-            tsdriver = 'generic ft5x06 (79)'
-        if 'ft5x06 (00)' in res.stdout:
-            tsdriver = 'generic ft5x06 (00)'
+        tsdriver = self.ts_driver()
         if tsdriver is not None and 'DSI-1' in self._xrandr.configuration.outputs:
             section = "input-device:" + tsdriver
             config[section] = {}
@@ -224,14 +222,7 @@ class ARandRWidget(Gtk.DrawingArea):
         self.write_wayfire_config ('/etc/wayfire/greeter.ini')
 
     def save_touchscreen(self):
-        tsdriver = None
-        res = subprocess.run ("xinput", shell=True, capture_output=True, encoding='utf8')
-        if 'FT5406' in res.stdout:
-            tsdriver = 'FT5406 memory based driver'
-        if 'ft5x06 (79)' in res.stdout:
-            tsdriver = 'generic ft5x06 (79)'
-        if 'ft5x06 (00)' in res.stdout:
-            tsdriver = 'generic ft5x06 (00)'
+        tsdriver = self.ts_driver()
         if tsdriver is not None and 'DSI-1' in self._xrandr.configuration.outputs:
             tscmd = 'xinput --map-to-output "' + tsdriver + '" DSI-1'
             subprocess.run (tscmd, shell=True)
