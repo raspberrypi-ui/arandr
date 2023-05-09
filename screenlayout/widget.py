@@ -161,7 +161,7 @@ class ARandRWidget(Gtk.DrawingArea):
             self.save_wayfire()
         else:
             self.save_dispsetup_sh()
-            self.save_monitors_xml()
+            #self.save_monitors_xml()
             self.save_touchscreen()
         if self.onthefly is True:
             self.load_from_x()
