@@ -190,6 +190,7 @@ class ARandRWidget(Gtk.DrawingArea):
     def write_wayfire_config(self,path):
         config = configparser.ConfigParser ()
         config.read (path)
+        tsunused = self._xrandr.touchscreens.copy()
         for output_name in self._xrandr.outputs:
             output_config = self._xrandr.configuration.outputs[output_name]
             section = 'output:' + output_name
@@ -207,11 +208,14 @@ class ARandRWidget(Gtk.DrawingArea):
             else:
                 rot = 'normal'
             config[section]['transform'] = rot
-        tsdriver = self.ts_driver()
-        if tsdriver and 'DSI-1' in self._xrandr.configuration.outputs:
-            section = "input-device:" + tsdriver
-            config[section] = {}
-            config[section]["output"] = "DSI-1"
+            if output_config.touchscreen != "":
+                section = "input-device:" + output_config.touchscreen
+                config[section] = {}
+                config[section]["output"] = output_name
+                tsunused.remove (output_config.touchscreen)
+        for tsu in tsunused:
+            section = "input-device:" + tsu
+            config.remove_section (section)
         with open (path, 'w') as configfile:
             config.write (configfile)
 
@@ -304,6 +308,9 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def set_rotation(self, output_name, rot):
         self._set_something('rotation', output_name, rot)
+
+    def set_touchscreen(self, output_name, ts):
+        self._set_something('touchscreen', output_name, ts)
 
     def set_resolution(self, output_name, res):
         self._set_something('mode', output_name, res)
@@ -582,16 +589,34 @@ class ARandRWidget(Gtk.DrawingArea):
                     i.props.sensitive = False
                 or_m.add(i)
 
+            ts_m = Gtk.Menu()
+            for ts in self._xrandr.touchscreens:
+                i = Gtk.CheckMenuItem(ts)
+                i.props.draw_as_radio = True
+                i.props.active = (output_config.touchscreen == ts)
+                def _ts_set(_menuitem, output_name, ts):
+                    for out in self._xrandr.configuration.outputs.values():
+                        if out.touchscreen == ts:
+                            out.touchscreen = ""
+                    self.set_touchscreen(output_name, ts)
+                i.connect('activate', _ts_set, output_name, ts)
+                ts_m.add(i)
+
             res_i = Gtk.MenuItem(_("Resolution"))
             res_i.props.submenu = res_m
             ref_i = Gtk.MenuItem(_("Frequency"))
             ref_i.props.submenu = ref_m
             or_i = Gtk.MenuItem(_("Orientation"))
             or_i.props.submenu = or_m
+            ts_i = Gtk.MenuItem(_("Touchscreen"))
+            ts_i.props.submenu = ts_m
+            if len(self._xrandr.touchscreens) == 0:
+                ts_i.props.sensitive = False
 
             menu.add(res_i)
             menu.add(ref_i)
             menu.add(or_i)
+            menu.add(ts_i)
 
         menu.show_all()
         return menu

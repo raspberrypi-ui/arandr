@@ -19,6 +19,7 @@
 import os
 import subprocess
 import warnings
+import configparser
 from functools import reduce
 
 from .auxiliary import (
@@ -60,6 +61,8 @@ class XRandR:
         if command == 'xrandr':
             if " 1.2" not in version_output:
                 self.features.add(Feature.PRIMARY)
+
+        self.find_touchscreens()
 
     def _get_outputs(self):
         assert self.state.outputs.keys() == self.configuration.outputs.keys()
@@ -258,10 +261,19 @@ class XRandR:
                 else:
                     # the mode is really new
                     output.modes.append(NamedSize(size, name=name))
+            touchscreen = ""
+            if self.command == 'wlr-randr' :
+                config = configparser.ConfigParser ()
+                config.read (os.path.expanduser ('~/.config/wayfire.ini'))
+                for ts in self.touchscreens:
+                    section = "input-device:" + ts
+                    dev = config.get (section, "output", fallback = None)
+                    if dev:
+                        touchscreen = ts
 
             self.state.outputs[output.name] = output
             self.configuration.outputs[output.name] = self.configuration.OutputConfiguration(
-                active, primary, geometry, current_rotation, currentname
+                active, primary, geometry, current_rotation, currentname, touchscreen
             )
 #        for index, name in enumerate(self.state.outputs):
 #            output = self.configuration.outputs[name]
@@ -390,6 +402,10 @@ class XRandR:
                         items.append(displ)
         current = str(curw) + 'x' + str(curh) + ' ' + str(curf)
         return current, items
+
+    def find_touchscreens(self):
+       res = subprocess.run ("libinput list-devices | tr \\\\n @ | sed 's/@@/\\\n/g' | grep \"Capabilities:     touch\" | sed 's/Device:[ \\\t]*//' | cut -d @ -f 1", shell=True, capture_output=True, encoding='utf8')
+       self.touchscreens = res.stdout.splitlines()
 
     def _setup_screen(self, curmode):
         self.state.virtual = self.state.Virtual(
@@ -619,9 +635,10 @@ class XRandR:
 
         class OutputConfiguration:
 
-            def __init__(self, active, primary, geometry, rotation, modename):
+            def __init__(self, active, primary, geometry, rotation, modename, touchscreen):
                 self.active = active
                 self.primary = primary
+                self.touchscreen = touchscreen
                 if active:
                     self.position = geometry.position
                     self.rotation = rotation
