@@ -535,7 +535,7 @@ class ARandRWidget(Gtk.DrawingArea):
             cur = output_config.mode.name.split()
             res_m = Gtk.Menu()
             inmenu = []
-            for mode in output_state.modes:
+            for mode in reversed (output_state.modes):
                 ms = mode.name.split()
                 if not ms[0] in inmenu:
                     inmenu.append(ms[0])
