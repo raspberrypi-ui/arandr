@@ -20,6 +20,7 @@
 import os
 import optparse
 import inspect
+import configparser
 
 # import os
 # os.environ['DISPLAY']=':0.0'
@@ -299,6 +300,11 @@ class Application:
                 except:
                     current.load_from_x()
             self.original = current.save_to_shellscript_string()
+            if self.widget.command == 'wlr-randr':
+                self.configbak = configparser.ConfigParser ()
+                self.configbak.read (os.path.expanduser ('~/.config/wayfire.ini'))
+                self.gconfigbak = configparser.ConfigParser ()
+                self.gconfigbak.read ('/etc/wayfire/greeter.ini')
             self.widget.save_to_x()
             self.show_confirm()
 

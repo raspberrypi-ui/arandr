@@ -149,6 +149,12 @@ class ARandRWidget(Gtk.DrawingArea):
         self.emit('changed')
 
     def revert_to(self, orig):
+        if self.command == 'wlr-randr':
+            with open (os.path.expanduser ('~/.config/wayfire.ini'),'w') as configfile:
+                self.gui.configbak.write (configfile)
+            shutil.chown (os.path.expanduser ('~/.config/wayfire.ini'), os.environ['SUDO_USER'], os.environ['SUDO_USER'])
+            with open ('/etc/wayfire/greeter.ini', 'w') as configfile:
+                self.gui.gconfigbak.write (configfile)
         self._xrandr.load_from_string (orig)
         self.save_to_x()
         self.gui.enable_revert (False)
