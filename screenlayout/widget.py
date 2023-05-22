@@ -595,10 +595,12 @@ class ARandRWidget(Gtk.DrawingArea):
                 i.props.draw_as_radio = True
                 i.props.active = (output_config.touchscreen == ts)
                 def _ts_set(_menuitem, output_name, ts):
-                    for out in self._xrandr.configuration.outputs.values():
-                        if out.touchscreen == ts:
-                            out.touchscreen = ""
-                    self.set_touchscreen(output_name, ts)
+                    if output_config.touchscreen != ts:
+                        for out in self._xrandr.configuration.outputs.values():
+                            if out.touchscreen == ts:
+                                out.touchscreen = ""
+                        self.set_touchscreen(output_name, ts)
+                        self.gui.tsreboot = True
                 i.connect('activate', _ts_set, output_name, ts)
                 ts_m.add(i)
 

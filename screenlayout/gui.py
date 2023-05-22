@@ -107,6 +107,7 @@ class Application:
 
     def __init__(self, file=None, randr_display=None, force_version=False):
         self.window = window = Gtk.Window()
+        self.tsreboot = False
         window.props.title = "Screen Layout Editor"
         window.set_icon_name('computer')
 
@@ -123,7 +124,7 @@ class Application:
             ("LayoutSettings", Gtk.STOCK_PROPERTIES, None,
              '<Alt>Return', None, self.do_open_properties),
 
-            ("Quit", Gtk.STOCK_QUIT, None, None, None, Gtk.main_quit),
+            ("Quit", Gtk.STOCK_QUIT, None, None, None, self.close_app),
 
 
             ("View", None, _("_View")),
@@ -141,7 +142,7 @@ class Application:
             ("Zoom16", None, _("1:16"), None, None, 16),
         ], 8, self.set_zoom)
 
-        window.connect('destroy', Gtk.main_quit)
+        window.connect('destroy', self.close_app)
 
         # uimanager
         self.uimanager = Gtk.UIManager()
@@ -185,7 +186,7 @@ class Application:
         cbutt = Gtk.Button ()
         cbutt.set_label (_("_Close"))
         cbutt.set_use_underline (True)
-        cbutt.connect ("clicked", Gtk.main_quit)
+        cbutt.connect ("clicked", self.close_app)
         bbar.pack_end (cbutt, expand=False, fill=False, padding=0)
         self.rbutt = Gtk.Button()
         self.rbutt.set_label (_("_Undo"))
@@ -212,6 +213,20 @@ class Application:
     def set_zoom(self, value):
         self.widget.factor = value
         #self.window.resize(1, 1)
+
+    def close_resp (self, widget, response_id):
+        if response_id == Gtk.ResponseType.YES:
+            os.system ('reboot')
+        widget.destroy ()
+        Gtk.main_quit ()
+
+    def close_app (self, val):
+        if self.tsreboot and self.rbutt.get_sensitive ():
+            self.conf = Gtk.MessageDialog (self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.YES_NO, _("Changes to touchscreen will take effect on reboot.\nClick 'Yes' to reboot now, or 'No' to reboot later."))
+            self.conf.connect ("response", self.close_resp)
+            self.conf.run ()
+        else:
+            Gtk.main_quit ()
 
     @actioncallback
     def do_open_properties(self):
