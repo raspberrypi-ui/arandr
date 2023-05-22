@@ -268,7 +268,7 @@ class XRandR:
                 for ts in self.touchscreens:
                     section = "input-device:" + ts
                     dev = config.get (section, "output", fallback = None)
-                    if dev:
+                    if dev == output.name:
                         touchscreen = ts
 
             self.state.outputs[output.name] = output
