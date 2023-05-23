@@ -493,9 +493,7 @@ class XRandR:
 
     def save_to_x(self):
         self.check_configuration()
-        if self.command == 'wlr-randr':
-            self._run(*self.configuration.commandlineargswayfire())
-        else:
+        if self.command != 'wlr-randr':
             self._run(*self.configuration.commandlineargs())
 
     def check_configuration(self):
