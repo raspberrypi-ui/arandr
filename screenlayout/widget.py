@@ -53,10 +53,6 @@ class ARandRWidget(Gtk.DrawingArea):
     def __init__(self, window, factor=8, display=None, force_version=False, gui=None):
         super(ARandRWidget, self).__init__()
 
-        self.onthefly = True
-        if os.system ('ps ax | grep -v grep | grep -q mutter') == 0:
-            self.onthefly = False
-
         self.command = "xrandr"
         if os.system ('ps ax | grep -v grep | grep -q wayfire') == 0:
             self.command = "wlr-randr"
@@ -160,19 +156,14 @@ class ARandRWidget(Gtk.DrawingArea):
         self.gui.enable_revert (False)
 
     def save_to_x(self):
-        if self.onthefly is True:
-            self._xrandr.save_to_x()
+        self._xrandr.save_to_x()
         self.gui.enable_revert (True)
         if self.command == 'wlr-randr':
             self.save_wayfire()
         else:
             self.save_dispsetup_sh()
-            #self.save_monitors_xml()
             self.save_touchscreen()
-        if self.onthefly is True:
-            self.load_from_x()
-        else:
-            self.load_from_file("/usr/share/dispsetup.sh")
+        self.load_from_x()
 
     def save_dispsetup_sh(self):
         data = self._xrandr.save_to_shellscript_string(None, None)
@@ -242,52 +233,6 @@ class ARandRWidget(Gtk.DrawingArea):
         else:
             if os.path.isfile ("/usr/share/tssetup.sh"):
                 os.remove ("/usr/share/tssetup.sh")
-
-    def save_monitors_xml(self):
-        path = os.path.expanduser ('~/.config/monitors.xml')
-        file = open (path, "w")
-        file.write ("<monitors version=\"2\">\n  <configuration>\n")
-        for output_name in self._xrandr.outputs:
-            output_config = self._xrandr.configuration.outputs[output_name]
-            output_state = self._xrandr.state.outputs[output_name]
-            if output_config.active:
-                file.write ("    <logicalmonitor>\n")
-                file.write ("      <x>" + str(int(output_config.position[0])) + "</x>\n")
-                file.write ("      <y>" + str(int(output_config.position[1])) + "</y>\n")
-                if output_config.primary:
-                    file.write ("      <primary>yes</primary>\n")
-                else:
-                    file.write ("      <primary>no</primary>\n")
-                file.write ("      <monitor>\n")
-                file.write ("        <monitorspec>\n")
-                file.write ("          <connector>" + output_name + "</connector>\n")
-                file.write ("          <vendor>" + output_config.pmanu + "</vendor>\n")
-                file.write ("          <product>" + output_config.pname + "</product>\n")
-                file.write ("          <serial>" + output_config.pserial + "</serial>\n")
-                file.write ("        </monitorspec>\n")
-                file.write ("        <mode>\n")
-                if output_config.rotation == "left" or output_config.rotation == "right":
-                    file.write ("          <width>" + str(int(output_config.size[1])) + "</width>\n")
-                    file.write ("          <height>" + str(int(output_config.size[0])) + "</height>\n")
-                else:
-                    file.write ("          <width>" + str(int(output_config.size[0])) + "</width>\n")
-                    file.write ("          <height>" + str(int(output_config.size[1])) + "</height>\n")
-                file.write ("          <rate>" + (output_config.mode.name.split(" ")[1]).replace('Hz','') + "</rate>\n")
-                if 'i' in output_config.mode.name:
-                    file.write ("          <flag>interlace</flag>\n")
-                file.write ("        </mode>\n")
-                file.write ("      </monitor>\n")
-                file.write ("      <transform>\n")
-                if output_config.rotation == "inverted":
-                    rot = "upside_down"
-                else:
-                    rot = output_config.rotation
-                file.write ("        <rotation>" + rot + "</rotation>\n")
-                file.write ("      </transform>\n")
-                file.write ("    </logicalmonitor>\n")
-        file.write ("  </configuration>\n</monitors>\n")
-        file.close ()
-        shutil.chown (path, os.environ['SUDO_USER'], os.environ['SUDO_USER'])
 
     def save_to_file(self, file, template=None, additional=None):
         data = self._xrandr.save_to_shellscript_string(template, additional)

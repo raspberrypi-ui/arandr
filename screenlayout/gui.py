@@ -270,19 +270,10 @@ class Application:
         GLib.source_remove (self.revert_timer)
         widget.destroy ()
 
-    def reboot_response (self, widget, response_id):
-        if response_id == Gtk.ResponseType.YES:
-            os.system ('reboot')
-        widget.destroy ()
-
     def show_confirm (self):
-        if self.widget.onthefly is True:
-            self.conf = Gtk.MessageDialog (self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting. Reverting in 10 seconds..."))
-            self.revert_timer = GLib.timeout_add (10000, self.revert_timeout)
-            self.conf.connect ("response", self.conf_response)
-        else:
-            self.conf = Gtk.MessageDialog (self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.YES_NO, _("Screen layout updated - changes will take effect on reboot.\nClick 'Yes' to reboot now, or 'No' to reboot later"))
-            self.conf.connect ("response", self.reboot_response)
+        self.conf = Gtk.MessageDialog (self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.OK_CANCEL, _("Screen updated. Click 'OK' if is this is correct, or 'Cancel' to revert to previous setting. Reverting in 10 seconds..."))
+        self.revert_timer = GLib.timeout_add (10000, self.revert_timeout)
+        self.conf.connect ("response", self.conf_response)
         self.conf.run ()
 
     @actioncallback
@@ -292,13 +283,7 @@ class Application:
 
         try:
             current = XRandR(command=self.widget.command)
-            if self.widget.onthefly is True:
-                current.load_from_x()
-            else:
-                try:
-                    current.load_from_string(open("/usr/share/dispsetup.sh", "r").read())
-                except:
-                    current.load_from_x()
+            current.load_from_x()
             self.original = current.save_to_shellscript_string()
             if self.widget.command == 'wlr-randr':
                 self.configbak = configparser.ConfigParser ()
