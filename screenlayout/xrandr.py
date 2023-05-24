@@ -215,10 +215,10 @@ class XRandR:
 
                 # modeid = hsplit[3].strip("()")
 
-                if hsplit[4] in ROTATIONS:
-                    current_rotation = Rotation(hsplit[4])
-                else:
-                    current_rotation = NORMAL
+                current_rotation = NORMAL
+                for rotation in ROTATIONS:
+                    if hsplit[4] == rotation.lower():
+                        current_rotation = Rotation(rotation)
             else:
                 active = False
                 geometry = None
