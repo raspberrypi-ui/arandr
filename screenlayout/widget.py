@@ -595,20 +595,21 @@ class ARandRWidget(Gtk.DrawingArea):
                     i.props.sensitive = False
                 or_m.add(i)
 
-            ts_m = Gtk.Menu()
-            for ts in self._xrandr.touchscreens:
-                i = Gtk.CheckMenuItem(ts)
-                i.props.draw_as_radio = True
-                i.props.active = (output_config.touchscreen == ts)
-                def _ts_set(_menuitem, output_name, ts):
-                    if output_config.touchscreen != ts:
-                        for out in self._xrandr.configuration.outputs.values():
-                            if out.touchscreen == ts:
-                                out.touchscreen = ""
-                        self.set_touchscreen(output_name, ts)
-                        self.gui.tsreboot = True
-                i.connect('activate', _ts_set, output_name, ts)
-                ts_m.add(i)
+            if self.command == 'wlr-randr':
+                ts_m = Gtk.Menu()
+                for ts in self._xrandr.touchscreens:
+                    i = Gtk.CheckMenuItem(ts)
+                    i.props.draw_as_radio = True
+                    i.props.active = (output_config.touchscreen == ts)
+                    def _ts_set(_menuitem, output_name, ts):
+                        if output_config.touchscreen != ts:
+                            for out in self._xrandr.configuration.outputs.values():
+                                if out.touchscreen == ts:
+                                    out.touchscreen = ""
+                            self.set_touchscreen(output_name, ts)
+                            self.gui.tsreboot = True
+                    i.connect('activate', _ts_set, output_name, ts)
+                    ts_m.add(i)
 
             res_i = Gtk.MenuItem(_("Resolution"))
             res_i.props.submenu = res_m
@@ -616,14 +617,14 @@ class ARandRWidget(Gtk.DrawingArea):
             ref_i.props.submenu = ref_m
             or_i = Gtk.MenuItem(_("Orientation"))
             or_i.props.submenu = or_m
-            if len(self._xrandr.touchscreens) > 0:
+            if self.command == 'wlr-randr' and len(self._xrandr.touchscreens) > 0:
                 ts_i = Gtk.MenuItem(_("Touchscreen"))
                 ts_i.props.submenu = ts_m
 
             menu.add(res_i)
             menu.add(ref_i)
             menu.add(or_i)
-            if len(self._xrandr.touchscreens) > 0:
+            if self.command == 'wlr-randr' and len(self._xrandr.touchscreens) > 0:
                 menu.add(ts_i)
 
         menu.show_all()
