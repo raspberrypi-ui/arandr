@@ -180,10 +180,6 @@ class ARandRWidget(Gtk.DrawingArea):
         file.write ("exit 0");
         file.close ()
 
-    def ts_driver(self):
-       res = subprocess.run ("libinput list-devices | tr \\\\n @ | sed 's/@@/\\\n/g' | grep \"Capabilities:     touch\" | sed 's/Device:[ \\\t]*//' | cut -d @ -f 1", shell=True, capture_output=True, encoding='utf8')
-       return res.stdout.rstrip ("\n")
-
     def write_wayfire_config(self,path):
         config = configparser.ConfigParser ()
         config.read (path)
