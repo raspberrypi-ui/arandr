@@ -164,9 +164,14 @@ class XRandR:
                     elif part[0] == '--pos':
                         output.position = Position(part[1])
                     elif part[0] == '--rotate':
-                        if part[1] not in ROTATIONS:
-                            raise FileSyntaxError()
-                        output.rotation = Rotation(part[1])
+                        if part[1] == 'normal':
+                            output.rotation = Rotation('Normal')
+                        elif part[1] == 'left':
+                            output.rotation = Rotation('Left')
+                        elif part[1] == 'inverted':
+                            output.rotation = Rotation('Inverted')
+                        elif part[1] == 'right':
+                            output.rotation = Rotation('Right')
                     else:
                         raise FileSyntaxError()
                 output.active = True
@@ -222,7 +227,7 @@ class XRandR:
 
             output.rotations = set()
             for rotation in ROTATIONS:
-                if self.command == 'wlr-randr' or rotation in headline:
+                if self.command == 'wlr-randr' or rotation.lower() in headline:
                     output.rotations.add(rotation)
 
             currentname = None
@@ -349,13 +354,13 @@ class XRandR:
                         output.position = Position(postup)
                     elif part[0] == '--transform':
                         if part[1] == 'normal':
-                            output.rotation = Rotation('normal')
+                            output.rotation = Rotation('Normal')
                         elif part[1] == '90':
-                            output.rotation = Rotation('left')
+                            output.rotation = Rotation('Left')
                         elif part[1] == '180':
-                            output.rotation = Rotation('inverted')
+                            output.rotation = Rotation('Inverted')
                         elif part[1] == '270':
-                            output.rotation = Rotation('right')
+                            output.rotation = Rotation('Right')
                         else:
                             raise FileSyntaxError()
                     else:
@@ -389,13 +394,13 @@ class XRandR:
                         cury = pos[1]
                     elif res[0] == 'Transform:':
                         if res[1] == 'normal':
-                            curt = 'normal'
+                            curt = 'Normal'
                         elif res[1] == '90':
-                            curt = 'left'
+                            curt = 'Left'
                         elif res[1] == '180':
-                            curt = 'inverted'
+                            curt = 'Inverted'
                         elif res[1] == '270':
-                            curt = 'right'
+                            curt = 'Right'
                     elif res[0] == 'Scale:':
                         displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
                         displ.append(modes)
@@ -600,7 +605,14 @@ class XRandR:
                     args.append("--pos")
                     args.append(str(output.position))
                     args.append("--rotate")
-                    args.append(output.rotation)
+                    if output.rotation == 'Normal':
+                        args.append('normal')
+                    elif output.rotation == 'Left':
+                        args.append('left')
+                    elif output.rotation == 'Inverted':
+                        args.append('inverted')
+                    elif output.rotation == 'Right':
+                        args.append('right')
             return args
 
         def commandlineargswayfire(self):
@@ -620,13 +632,13 @@ class XRandR:
                     args.append("--pos")
                     args.append(str(output.position).replace('x',','))
                     args.append("--transform")
-                    if output.rotation == 'normal':
+                    if output.rotation == 'Normal':
                         args.append('normal')
-                    elif output.rotation == 'left':
+                    elif output.rotation == 'Left':
                         args.append('90')
-                    elif output.rotation == 'inverted':
+                    elif output.rotation == 'Inverted':
                         args.append('180')
-                    elif output.rotation == 'right':
+                    elif output.rotation == 'Right':
                         args.append('270')
 
             return args

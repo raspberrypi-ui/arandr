@@ -136,18 +136,18 @@ class Rotation(str):
 
     def __init__(self, _original_me):
         super().__init__()
-        if self not in ('left', 'right', 'normal', 'inverted'):
+        if self not in ('Left', 'Right', 'Normal', 'Inverted'):
             raise Exception("No know rotation.")
-    is_odd = property(lambda self: self in ('left', 'right'))
-    _angles = {'left': pi / 2, 'inverted': pi, 'right': 3 * pi / 2, 'normal': 0}
+    is_odd = property(lambda self: self in ('Left', 'Right'))
+    _angles = {'Left': pi / 2, 'Inverted': pi, 'Right': 3 * pi / 2, 'Normal': 0}
     angle = property(lambda self: Rotation._angles[self])
 
     def __repr__(self):
         return '<Rotation %s>' % self
 
 
-LEFT = Rotation('left')
-RIGHT = Rotation('right')
-INVERTED = Rotation('inverted')
-NORMAL = Rotation('normal')
+LEFT = Rotation('Left')
+RIGHT = Rotation('Right')
+INVERTED = Rotation('Inverted')
+NORMAL = Rotation('Normal')
 ROTATIONS = (NORMAL, RIGHT, INVERTED, LEFT)

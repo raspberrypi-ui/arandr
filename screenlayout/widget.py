@@ -205,11 +205,11 @@ class ARandRWidget(Gtk.DrawingArea):
             config[section] = {}
             config[section]['mode'] = key
             config[section]['position'] = str(int(output_config.position[0])) + ',' + str(int(output_config.position[1]))
-            if output_config.rotation == 'left':
+            if output_config.rotation == 'Left':
                 rot = '90'
-            elif output_config.rotation == 'inverted':
+            elif output_config.rotation == 'Inverted':
                 rot = '180'
-            elif output_config.rotation == 'right':
+            elif output_config.rotation == 'Right':
                 rot = '270'
             else:
                 rot = 'normal'
