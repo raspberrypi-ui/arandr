@@ -223,16 +223,16 @@ class ARandRWidget(Gtk.DrawingArea):
         self.write_wayfire_config ('/etc/wayfire/greeter.ini')
 
     def save_touchscreen(self):
-        tsdriver = self.ts_driver()
-        if tsdriver and 'DSI-1' in self._xrandr.configuration.outputs:
-            tscmd = 'xinput --map-to-output "' + tsdriver + '" DSI-1'
-            subprocess.run (tscmd, shell=True)
-            file = open ("/usr/share/tssetup.sh", "w")
-            file.write ("if xinput | grep -q \"" + tsdriver + "\" ; then " + tscmd + " ; fi")
-            file.close ()
-        else:
-            if os.path.isfile ("/usr/share/tssetup.sh"):
-                os.remove ("/usr/share/tssetup.sh")
+        if os.path.isfile ("/usr/share/tssetup.sh"):
+            os.remove ("/usr/share/tssetup.sh")
+        for output_name in self._xrandr.outputs:
+            output_config = self._xrandr.configuration.outputs[output_name]
+            if output_config.touchscreen != "":
+                tscmd = 'xinput --map-to-output "' + output_config.touchscreen + '" ' + output_name
+                subprocess.run (tscmd, shell=True)
+                file = open ("/usr/share/tssetup.sh", "a")
+                file.write ("if xinput | grep -q \"" + output_config.touchscreen + "\" ; then " + tscmd + " ; fi")
+                file.close ()
 
     def save_to_file(self, file, template=None, additional=None):
         data = self._xrandr.save_to_shellscript_string(template, additional)
@@ -540,21 +540,20 @@ class ARandRWidget(Gtk.DrawingArea):
                     i.props.sensitive = False
                 or_m.add(i)
 
-            if self.command == 'wlr-randr':
-                ts_m = Gtk.Menu()
-                for ts in self._xrandr.touchscreens:
-                    i = Gtk.CheckMenuItem(ts)
-                    i.props.draw_as_radio = True
-                    i.props.active = (output_config.touchscreen == ts)
-                    def _ts_set(_menuitem, output_name, ts):
-                        if output_config.touchscreen != ts:
-                            for out in self._xrandr.configuration.outputs.values():
-                                if out.touchscreen == ts:
-                                    out.touchscreen = ""
-                            self.set_touchscreen(output_name, ts)
-                            self.gui.tsreboot = True
-                    i.connect('activate', _ts_set, output_name, ts)
-                    ts_m.add(i)
+            ts_m = Gtk.Menu()
+            for ts in self._xrandr.touchscreens:
+                i = Gtk.CheckMenuItem(ts)
+                i.props.draw_as_radio = True
+                i.props.active = (output_config.touchscreen == ts)
+                def _ts_set(_menuitem, output_name, ts):
+                    if output_config.touchscreen != ts:
+                        for out in self._xrandr.configuration.outputs.values():
+                            if out.touchscreen == ts:
+                                out.touchscreen = ""
+                        self.set_touchscreen(output_name, ts)
+                        self.gui.tsreboot = True
+                i.connect('activate', _ts_set, output_name, ts)
+                ts_m.add(i)
 
             res_i = Gtk.MenuItem(_("Resolution"))
             res_i.props.submenu = res_m
@@ -562,14 +561,14 @@ class ARandRWidget(Gtk.DrawingArea):
             ref_i.props.submenu = ref_m
             or_i = Gtk.MenuItem(_("Orientation"))
             or_i.props.submenu = or_m
-            if self.command == 'wlr-randr' and len(self._xrandr.touchscreens) > 0:
+            if len(self._xrandr.touchscreens) > 0:
                 ts_i = Gtk.MenuItem(_("Touchscreen"))
                 ts_i.props.submenu = ts_m
 
             menu.add(res_i)
             menu.add(ref_i)
             menu.add(or_i)
-            if self.command == 'wlr-randr' and len(self._xrandr.touchscreens) > 0:
+            if len(self._xrandr.touchscreens) > 0:
                 menu.add(ts_i)
 
         menu.show_all()

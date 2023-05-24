@@ -267,7 +267,7 @@ class XRandR:
                     # the mode is really new
                     output.modes.append(NamedSize(size, name=name))
             touchscreen = ""
-            if self.command == 'wlr-randr' :
+            if self.command == 'wlr-randr':
                 config = configparser.ConfigParser ()
                 config.read (os.path.expanduser ('~/.config/wayfire.ini'))
                 for ts in self.touchscreens:
@@ -275,6 +275,12 @@ class XRandR:
                     dev = config.get (section, "output", fallback = None)
                     if dev == output.name:
                         touchscreen = ts
+            else:
+                if os.path.isfile ("/usr/share/tssetup.sh"):
+                    tsfile = open ("/usr/share/tssetup.sh", "r")
+                    for line in tsfile:
+                        if output.name in line:
+                            touchscreen = line.split('"')[1]
 
             self.state.outputs[output.name] = output
             self.configuration.outputs[output.name] = self.configuration.OutputConfiguration(
