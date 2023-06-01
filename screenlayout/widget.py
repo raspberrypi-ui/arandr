@@ -20,8 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 import os
-import subprocess
 import stat
+import subprocess
 import shutil
 import configparser
 
@@ -204,15 +204,7 @@ class ARandRWidget(Gtk.DrawingArea):
             config[section] = {}
             config[section]['mode'] = key
             config[section]['position'] = str(int(output_config.position[0])) + ',' + str(int(output_config.position[1]))
-            if output_config.rotation == 'Left':
-                rot = '90'
-            elif output_config.rotation == 'Inverted':
-                rot = '180'
-            elif output_config.rotation == 'Right':
-                rot = '270'
-            else:
-                rot = 'normal'
-            config[section]['transform'] = rot
+            config[section]['transform'] = output_config.rotation.wayname()
             if output_config.touchscreen != "":
                 section = "input-device:" + output_config.touchscreen
                 config[section] = {}
