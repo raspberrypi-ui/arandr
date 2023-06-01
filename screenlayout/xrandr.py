@@ -116,7 +116,7 @@ class XRandR:
 
     def remap_rotation(self, rotname):
         if rotname.isnumeric():
-            name = ('Left', 'Inverted', 'Right')[int(rotname) / 90 - 1]
+            name = ('Left', 'Inverted', 'Right')[int(int(rotname) / 90 - 1)]
         else:
             name = rotname.capitalize()
         return Rotation(name)
@@ -360,14 +360,7 @@ class XRandR:
                         curx = pos[0]
                         cury = pos[1]
                     elif res[0] == 'Transform:':
-                        if res[1] == 'normal':
-                            curt = 'normal'
-                        elif res[1] == '90':
-                            curt = 'left'
-                        elif res[1] == '180':
-                            curt = 'inverted'
-                        elif res[1] == '270':
-                            curt = 'right'
+                        curt = self.remap_rotation (res[1]).lower()
                     elif res[0] == 'Scale:':
                         displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
                         displ.append(modes)
