@@ -293,10 +293,13 @@ class Application:
             self.widget.save_to_x()
             self.show_confirm()
 
-        except Exception as e:
-            d = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, _("XRandR failed:\n%s")%e)
-            d.run()
-            d.destroy()
+        except Exception as exc:  # pylint: disable=broad-except
+            dialog = Gtk.MessageDialog(
+                None, Gtk.DialogFlags.MODAL, Gtk.MessageType.ERROR,
+                Gtk.ButtonsType.OK, _("XRandR failed:\n%s") % exc
+            )
+            dialog.run()
+            dialog.destroy()
 
     @actioncallback
     def do_revert(self):

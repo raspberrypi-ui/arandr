@@ -54,7 +54,7 @@ class ARandRWidget(Gtk.DrawingArea):
         super(ARandRWidget, self).__init__()
 
         self.command = "xrandr"
-        if os.system ('ps ax | grep -v grep | grep -q wayfire') == 0:
+        if os.environ.get ("WAYFIRE_CONFIG_FILE") is not None:
             self.command = "wlr-randr"
 
         self.window = window
@@ -180,6 +180,18 @@ class ARandRWidget(Gtk.DrawingArea):
         file.write ("exit 0");
         file.close ()
 
+    def save_touchscreen(self):
+        if os.path.isfile ("/usr/share/tssetup.sh"):
+            os.remove ("/usr/share/tssetup.sh")
+        for output_name in self._xrandr.outputs:
+            output_config = self._xrandr.configuration.outputs[output_name]
+            if output_config.touchscreen != "":
+                tscmd = 'xinput --map-to-output "' + output_config.touchscreen + '" ' + output_name
+                subprocess.run (tscmd, shell=True)
+                file = open ("/usr/share/tssetup.sh", "a")
+                file.write ("if xinput | grep -q \"" + output_config.touchscreen + "\" ; then " + tscmd + " ; fi")
+                file.close ()
+
     def write_wayfire_config(self,path):
         config = configparser.ConfigParser ()
         config.read (path)
@@ -217,18 +229,6 @@ class ARandRWidget(Gtk.DrawingArea):
         self.write_wayfire_config (path)
         shutil.chown (path, os.environ['SUDO_USER'], os.environ['SUDO_USER'])
         self.write_wayfire_config ('/etc/wayfire/greeter.ini')
-
-    def save_touchscreen(self):
-        if os.path.isfile ("/usr/share/tssetup.sh"):
-            os.remove ("/usr/share/tssetup.sh")
-        for output_name in self._xrandr.outputs:
-            output_config = self._xrandr.configuration.outputs[output_name]
-            if output_config.touchscreen != "":
-                tscmd = 'xinput --map-to-output "' + output_config.touchscreen + '" ' + output_name
-                subprocess.run (tscmd, shell=True)
-                file = open ("/usr/share/tssetup.sh", "a")
-                file.write ("if xinput | grep -q \"" + output_config.touchscreen + "\" ; then " + tscmd + " ; fi")
-                file.close ()
 
     def save_to_file(self, file, template=None, additional=None):
         data = self._xrandr.save_to_shellscript_string(template, additional)
@@ -524,6 +524,7 @@ class ARandRWidget(Gtk.DrawingArea):
                 i = Gtk.CheckMenuItem("%s" % rotation)
                 i.props.draw_as_radio = True
                 i.props.active = (output_config.rotation == rotation)
+
                 def _rot_set(_menuitem, output_name, rotation):
                     try:
                         self.set_rotation(output_name, rotation)
