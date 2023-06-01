@@ -114,6 +114,13 @@ class XRandR:
 
         return lines
 
+    def remap_rotation(self, rotname):
+        if rotname.isnumeric():
+            name = ('Left', 'Inverted', 'Right')[int(rotname) / 90 - 1]
+        else:
+            name = rotname.capitalize()
+        return Rotation(name)
+
     def _load_from_commandlineargs(self, commandline):
         self.load_from_x()
 
@@ -164,14 +171,7 @@ class XRandR:
                     elif part[0] == '--pos':
                         output.position = Position(part[1])
                     elif part[0] == '--rotate':
-                        if part[1] == 'normal':
-                            output.rotation = Rotation('Normal')
-                        elif part[1] == 'left':
-                            output.rotation = Rotation('Left')
-                        elif part[1] == 'inverted':
-                            output.rotation = Rotation('Inverted')
-                        elif part[1] == 'right':
-                            output.rotation = Rotation('Right')
+                        output.rotation = self.remap_rotation(part[1])
                     else:
                         raise FileSyntaxError()
                 output.active = True
@@ -329,16 +329,7 @@ class XRandR:
                         postup = tuple (int (item) for item in poslist)
                         output.position = Position(postup)
                     elif part[0] == '--transform':
-                        if part[1] == 'normal':
-                            output.rotation = Rotation('Normal')
-                        elif part[1] == '90':
-                            output.rotation = Rotation('Left')
-                        elif part[1] == '180':
-                            output.rotation = Rotation('Inverted')
-                        elif part[1] == '270':
-                            output.rotation = Rotation('Right')
-                        else:
-                            raise FileSyntaxError()
+                        output.rotation = self.remap_rotation(part[1])
                     else:
                         raise FileSyntaxError()
                 output.active = True
