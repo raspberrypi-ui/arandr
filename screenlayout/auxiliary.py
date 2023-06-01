@@ -145,6 +145,19 @@ class Rotation(str):
     def __repr__(self):
         return '<Rotation %s>' % self
 
+    def xname(self):
+        return self.lower()
+
+    def wayname(self):
+        if self == 'Normal':
+            return 'normal'
+        elif self == 'Left':
+            return '90'
+        elif self == 'Inverted':
+            return '180'
+        elif self == 'Right':
+            return '270'
+
 
 LEFT = Rotation('Left')
 RIGHT = Rotation('Right')

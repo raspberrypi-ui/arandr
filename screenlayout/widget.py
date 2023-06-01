@@ -489,7 +489,11 @@ class ARandRWidget(Gtk.DrawingArea):
             cur = output_config.mode.name.split()
             res_m = Gtk.Menu()
             inmenu = []
-            for mode in reversed (output_state.modes):
+            if self.command == 'wlr-randr':
+                modlist = reversed (output_state.modes)
+            else:
+                modlist = output_state.modes
+            for mode in modlist:
                 ms = mode.name.split()
                 if not ms[0] in inmenu:
                     inmenu.append(ms[0])
@@ -524,7 +528,6 @@ class ARandRWidget(Gtk.DrawingArea):
                 i = Gtk.CheckMenuItem("%s" % rotation)
                 i.props.draw_as_radio = True
                 i.props.active = (output_config.rotation == rotation)
-
                 def _rot_set(_menuitem, output_name, rotation):
                     try:
                         self.set_rotation(output_name, rotation)

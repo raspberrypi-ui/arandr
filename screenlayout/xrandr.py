@@ -370,13 +370,13 @@ class XRandR:
                         cury = pos[1]
                     elif res[0] == 'Transform:':
                         if res[1] == 'normal':
-                            curt = 'Normal'
+                            curt = 'normal'
                         elif res[1] == '90':
-                            curt = 'Left'
+                            curt = 'left'
                         elif res[1] == '180':
-                            curt = 'Inverted'
+                            curt = 'inverted'
                         elif res[1] == '270':
-                            curt = 'Right'
+                            curt = 'right'
                     elif res[0] == 'Scale:':
                         displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
                         displ.append(modes)
@@ -575,20 +575,12 @@ class XRandR:
                     if 'i' in str(modres[0]):
                         freq = 2 * float(str(modres[1]).replace('Hz',''))
                         args.append(str("{:.3f}".format (freq)))
-                        #print (str(modres[1]))
                     else:
                         args.append(str(modres[1]).replace('Hz',''))
                     args.append("--pos")
                     args.append(str(output.position))
                     args.append("--rotate")
-                    if output.rotation == 'Normal':
-                        args.append('normal')
-                    elif output.rotation == 'Left':
-                        args.append('left')
-                    elif output.rotation == 'Inverted':
-                        args.append('inverted')
-                    elif output.rotation == 'Right':
-                        args.append('right')
+                    args.append (output.rotation.xname())
             return args
 
         def commandlineargswayfire(self):
@@ -608,14 +600,7 @@ class XRandR:
                     args.append("--pos")
                     args.append(str(output.position).replace('x',','))
                     args.append("--transform")
-                    if output.rotation == 'Normal':
-                        args.append('normal')
-                    elif output.rotation == 'Left':
-                        args.append('90')
-                    elif output.rotation == 'Inverted':
-                        args.append('180')
-                    elif output.rotation == 'Right':
-                        args.append('270')
+                    args.append(output.rotation.wayname())
 
             return args
 
