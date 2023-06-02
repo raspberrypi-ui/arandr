@@ -156,10 +156,14 @@ class ARandRWidget(Gtk.DrawingArea):
         if self.command == 'wlr-randr':
             written = self.save_wayfire()
         else:
-            self._xrandr.save_to_x()
+            written = False
+            newconf = "xrandr " + " ".join(self._xrandr.configuration.commandlineargs())
+            curconf = self.gui.original.split('\n')[1]
+            if newconf != curconf:
+                self._xrandr.save_to_x()
+                written = True
             self.save_dispsetup_sh()
             self.save_touchscreen()
-            written = True
         self.reload()
         return written
 
