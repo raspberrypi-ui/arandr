@@ -106,10 +106,7 @@ class XRandR:
             raise FileLoadError('No recognized xrandr command in this shell script.')
         if len(xrandrlines) > 1:
             raise FileLoadError('More than one xrandr line in this shell script.')
-        if self.command == 'wlr-randr':
-            self._load_from_commandlineargs_wayfire(lines[xrandrlines[0]].strip())
-        else:
-            self._load_from_commandlineargs(lines[xrandrlines[0]].strip())
+        self._load_from_commandlineargs(lines[xrandrlines[0]].strip())
         lines[xrandrlines[0]] = '%(xrandr)s'
 
         return lines
@@ -122,7 +119,7 @@ class XRandR:
         return Rotation(name)
 
     def _load_from_commandlineargs(self, commandline):
-        self.load_from_x()
+        self.load_current_state()
 
         args = BetterList(commandline.split(" "))
         if args.pop(0) != 'xrandr':
@@ -176,7 +173,7 @@ class XRandR:
                         raise FileSyntaxError()
                 output.active = True
 
-    def load_from_x(self):  # FIXME -- use a library
+    def load_current_state(self):  # FIXME -- use a library
         self.configuration = self.Configuration(self)
         self.state = self.State()
 
@@ -287,53 +284,6 @@ class XRandR:
                 active, primary, geometry, current_rotation, currentname, touchscreen
             )
 
-    def _load_from_commandlineargs_wayfire(self, commandline):
-        self.load_from_x()
-
-        args = BetterList(commandline.split(" "))
-        if args.pop(0) != 'wlr-randr':
-            raise FileSyntaxError()
-        # first part is empty, exclude empty parts
-        options = dict((a[0], a[1:]) for a in args.split('--output') if a)
-
-        for output_name, output_argument in options.items():
-            output = self.configuration.outputs[output_name]
-            output_state = self.state.outputs[output_name]
-            output.primary = False
-            if output_argument == ['--off']:
-                output.active = False
-            else:
-                if '--primary' in output_argument:
-                    if Feature.PRIMARY in self.features:
-                        output.primary = True
-                    output_argument.remove('--primary')
-                if len(output_argument) % 2 != 0:
-                    raise FileSyntaxError()
-                parts = [
-                    (output_argument[2 * i], output_argument[2 * i + 1])
-                    for i in range(len(output_argument) // 2)
-                ]
-                mode = ''
-                for part in parts:
-                    if part[0] == '--mode':
-                        mode = part[1].replace('@', ' ')
-                        if mode:
-                            for namedmode in output_state.modes:
-                                if namedmode.name == mode:
-                                    output.mode = namedmode
-                                    break
-                            else:
-                                raise FileLoadError("Not a known mode: %s" % (mode))
-                    elif part[0] == '--pos':
-                        poslist = part[1].split(',')
-                        postup = tuple (int (item) for item in poslist)
-                        output.position = Position(postup)
-                    elif part[0] == '--transform':
-                        output.rotation = self.remap_rotation(part[1])
-                    else:
-                        raise FileSyntaxError()
-                output.active = True
-
     def _load_raw_lines_wayfire(self):
         output = self._output("")
         items = []
@@ -443,14 +393,9 @@ class XRandR:
             template = self.DEFAULTTEMPLATE
         template = '\n'.join(template) + '\n'
 
-        if self.command == 'wlr-randr':
-            data = {
-                'xrandr': 'wlr-randr ' + " ".join(self.configuration.commandlineargswayfire())
-            }
-        else:
-            data = {
-                'xrandr': 'xrandr ' + " ".join(self.configuration.commandlineargs())
-            }
+        data = {
+            'xrandr': "xrandr " + " ".join(self.configuration.commandlineargs())
+        }
         if additional:
             data.update(additional)
 
@@ -458,8 +403,7 @@ class XRandR:
 
     def save_to_x(self):
         self.check_configuration()
-        if self.command != 'wlr-randr':
-            self._run(*self.configuration.commandlineargs())
+        self._run(*self.configuration.commandlineargs())
 
     def check_configuration(self):
         vmax = self.state.virtual.max
@@ -565,27 +509,6 @@ class XRandR:
                     args.append(str(output.position))
                     args.append("--rotate")
                     args.append (output.rotation.xname())
-            return args
-
-        def commandlineargswayfire(self):
-            args = []
-            for output_name, output in self.outputs.items():
-                args.append("--output")
-                args.append(output_name)
-                if not output.active:
-                    args.append("--off")
-                else:
-                    if Feature.PRIMARY in self._xrandr.features:
-                        if output.primary:
-                            args.append("--primary")
-                    modres=str(output.mode.name).split(" ")
-                    args.append("--mode")
-                    args.append(str(modres[0]) + '@' + modres[1])
-                    args.append("--pos")
-                    args.append(str(output.position).replace('x',','))
-                    args.append("--transform")
-                    args.append(output.rotation.wayname())
-
             return args
 
         class OutputConfiguration:

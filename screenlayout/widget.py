@@ -124,14 +124,8 @@ class ARandRWidget(Gtk.DrawingArea):
 
     #################### loading ####################
 
-    def load_from_file(self, file):
-        data = open(file).read()
-        template = self._xrandr.load_from_string(data)
-        self._xrandr_was_reloaded()
-        return template
-
-    def load_from_x(self):
-        self._xrandr.load_from_x()
+    def reload(self):
+        self._xrandr.load_current_state()
         self._xrandr_was_reloaded()
         return self._xrandr.DEFAULTTEMPLATE
 
@@ -144,26 +138,30 @@ class ARandRWidget(Gtk.DrawingArea):
             self._force_repaint()
         self.emit('changed')
 
-    def revert_to(self, orig):
+    def revert(self):
         if self.command == 'wlr-randr':
             with open (os.path.expanduser ('~/.config/wayfire.ini'),'w') as configfile:
                 self.gui.configbak.write (configfile)
             shutil.chown (os.path.expanduser ('~/.config/wayfire.ini'), os.environ['SUDO_USER'], os.environ['SUDO_USER'])
             with open ('/etc/wayfire/greeter.ini', 'w') as configfile:
                 self.gui.gconfigbak.write (configfile)
-        self._xrandr.load_from_string (orig)
-        self.save_to_x()
-        self.gui.enable_revert (False)
-
-    def save_to_x(self):
-        self._xrandr.save_to_x()
-        self.gui.enable_revert (True)
-        if self.command == 'wlr-randr':
-            self.save_wayfire()
         else:
+            self._xrandr.load_from_string (self.gui.original)
+            self._xrandr.save_to_x()
             self.save_dispsetup_sh()
             self.save_touchscreen()
-        self.load_from_x()
+        self.reload()
+
+    def save(self):
+        if self.command == 'wlr-randr':
+            written = self.save_wayfire()
+        else:
+            self._xrandr.save_to_x()
+            self.save_dispsetup_sh()
+            self.save_touchscreen()
+            written = True
+        self.reload()
+        return written
 
     def save_dispsetup_sh(self):
         data = self._xrandr.save_to_shellscript_string(None, None)
@@ -192,7 +190,7 @@ class ARandRWidget(Gtk.DrawingArea):
                 file.write ("if xinput | grep -q \"" + output_config.touchscreen + "\" ; then " + tscmd + " ; fi")
                 file.close ()
 
-    def write_wayfire_config(self,path):
+    def write_wayfire_config(self,path,oldconf):
         config = configparser.ConfigParser ()
         config.read (path)
         tsunused = self._xrandr.touchscreens.copy()
@@ -213,20 +211,35 @@ class ARandRWidget(Gtk.DrawingArea):
         for tsu in tsunused:
             section = "input-device:" + tsu
             config.remove_section (section)
-        with open (path, 'w') as configfile:
-            config.write (configfile)
+        if self.config_compare (config, oldconf):
+            with open (path, 'w') as configfile:
+                config.write (configfile)
+            return True
+        else:
+            return False
+
+    def config_compare(self, conf1, conf2):
+        for section in conf1.sections ():
+            if "output:" in section or "input-device:" in section:
+                for option in conf1.options (section):
+                    if conf1.get (section, option) != conf2.get (section, option):
+                        return True
+        for section in conf2.sections ():
+            if "output:" in section or "input-device:" in section:
+                for option in conf2.options (section):
+                    if conf1.get (section, option) != conf2.get (section, option):
+                        return True
+        return False
 
     def save_wayfire(self):
+        written = False
         path = os.path.expanduser ('~/.config/wayfire.ini')
-        self.write_wayfire_config (path)
+        if self.write_wayfire_config (path, self.gui.configbak):
+            written = True
         shutil.chown (path, os.environ['SUDO_USER'], os.environ['SUDO_USER'])
-        self.write_wayfire_config ('/etc/wayfire/greeter.ini')
-
-    def save_to_file(self, file, template=None, additional=None):
-        data = self._xrandr.save_to_shellscript_string(template, additional)
-        open(file, 'w').write(data)
-        os.chmod(file, stat.S_IRWXU)
-        self.load_from_file(file)
+        if self.write_wayfire_config ('/etc/wayfire/greeter.ini', self.gui.gconfigbak):
+            written = True
+        return written
 
     #################### doing changes ####################
 

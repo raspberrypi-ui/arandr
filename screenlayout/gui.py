@@ -116,17 +116,11 @@ class Application:
         actiongroup = Gtk.ActionGroup('default')
         actiongroup.add_actions([
             ("File", None, _("_File")),
-            ("New", Gtk.STOCK_NEW, None, None, None, self.do_new),
-            ("Open", Gtk.STOCK_OPEN, None, None, None, self.do_open),
-            ("SaveAs", Gtk.STOCK_SAVE_AS, None, None, None, self.do_save_as),
 
             ("Apply", Gtk.STOCK_APPLY, None, '<Control>Return', None, self.do_apply),
             ("Revert", Gtk.STOCK_UNDO, None, None, None, self.do_revert),
-            ("LayoutSettings", Gtk.STOCK_PROPERTIES, None,
-             '<Alt>Return', None, self.do_open_properties),
 
             ("Quit", Gtk.STOCK_QUIT, None, None, None, self.close_app),
-
 
             ("View", None, _("_View")),
 
@@ -159,13 +153,7 @@ class Application:
             display=randr_display, force_version=force_version,
             window=self.window, gui=self
         )
-        if file is None:
-            self.filetemplate = self.widget.load_from_x()
-        else:
-            try:
-                self.filetemplate = self.widget.load_from_file(file)
-            except:
-                self.filetemplate = self.widget.load_from_x()
+        self.widget.reload()
 
         self.widget.connect('changed', self._widget_changed)
         self._widget_changed(self.widget)
@@ -204,7 +192,6 @@ class Application:
         window.add(vbox)
         window.show_all()
 
-        self.gconf = None
         self.enable_revert (False)
 
     #################### actions ####################
@@ -228,31 +215,6 @@ class Application:
             self.conf.run ()
         else:
             Gtk.main_quit ()
-
-    @actioncallback
-    def do_open_properties(self):
-        dialog = Gtk.Dialog(
-            _("Script Properties"), None,
-            Gtk.DialogFlags.MODAL, (Gtk.STOCK_CLOSE, Gtk.ResponseType.ACCEPT)
-        )
-        dialog.set_default_size(300, 400)
-
-        script_editor = Gtk.TextView()
-        script_buffer = script_editor.get_buffer()
-        script_buffer.set_text("\n".join(self.filetemplate))
-        script_editor.props.editable = False
-
-        # wacom_options = Gtk.Label("FIXME")
-
-        notebook = Gtk.Notebook()
-        # notebook.append_page(wacom_options, Gtk.Label(_("Wacom options")))
-        notebook.append_page(script_editor, Gtk.Label(_("Script")))
-
-        dialog.vbox.pack_start(notebook, expand=False, fill=False, padding=0)  # pylint: disable=no-member
-        dialog.show_all()
-
-        dialog.run()
-        dialog.destroy()
 
     def enable_revert (self, state):
         ag = self.uimanager.get_action_groups()
@@ -282,16 +244,18 @@ class Application:
             return
 
         try:
-            current = XRandR(command=self.widget.command)
-            current.load_from_x()
-            self.original = current.save_to_shellscript_string()
             if self.widget.command == 'wlr-randr':
                 self.configbak = configparser.ConfigParser ()
                 self.configbak.read (os.path.expanduser ('~/.config/wayfire.ini'))
                 self.gconfigbak = configparser.ConfigParser ()
                 self.gconfigbak.read ('/etc/wayfire/greeter.ini')
-            self.widget.save_to_x()
-            self.show_confirm()
+            else:
+                current = XRandR(command=self.widget.command)
+                current.load_current_state()
+                self.original = current.save_to_shellscript_string()
+            if self.widget.save():
+                self.enable_revert (True)
+                self.show_confirm()
 
         except Exception as exc:  # pylint: disable=broad-except
             dialog = Gtk.MessageDialog(
@@ -307,7 +271,8 @@ class Application:
             return
 
         try:
-            self.widget.revert_to (self.original)
+            self.widget.revert ()
+            self.enable_revert (False)
         except Exception as exc:  # pylint: disable=broad-except
             dialog = Gtk.MessageDialog(
                 None, Gtk.DialogFlags.MODAL, Gtk.MessageType.ERROR,
@@ -315,60 +280,6 @@ class Application:
             )
             dialog.run()
             dialog.destroy()
-
-    @actioncallback
-    def do_new(self):
-        self.filetemplate = self.widget.load_from_x()
-
-    @actioncallback
-    def do_open(self):
-        dialog = self._new_file_dialog(
-            _("Open Layout"), Gtk.FileChooserAction.OPEN, Gtk.STOCK_OPEN
-        )
-
-        result = dialog.run()
-        filenames = dialog.get_filenames()
-        dialog.destroy()
-        if result == Gtk.ResponseType.ACCEPT:
-            assert len(filenames) == 1
-            filename = filenames[0]
-            self.filetemplate = self.widget.load_from_file(filename)
-
-    @actioncallback
-    def do_save_as(self):
-        dialog = self._new_file_dialog(
-            _("Save Layout"), Gtk.FileChooserAction.SAVE, Gtk.STOCK_SAVE
-        )
-        dialog.props.do_overwrite_confirmation = True
-
-        result = dialog.run()
-        filenames = dialog.get_filenames()
-        dialog.destroy()
-        if result == Gtk.ResponseType.ACCEPT:
-            assert len(filenames) == 1
-            filename = filenames[0]
-            if not filename.endswith('.sh'):
-                filename = filename + '.sh'
-            self.widget.save_to_file(filename, self.filetemplate)
-
-    def _new_file_dialog(self, title, dialog_type, buttontype):  # pylint: disable=no-self-use
-        dialog = Gtk.FileChooserDialog(title, None, dialog_type)
-        dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
-        dialog.add_button(buttontype, Gtk.ResponseType.ACCEPT)
-
-        layoutdir = os.path.expanduser('~/.screenlayout/')
-        try:
-            os.makedirs(layoutdir)
-        except OSError:
-            pass
-        dialog.set_current_folder(layoutdir)
-
-        file_filter = Gtk.FileFilter()
-        file_filter.set_name('Shell script (Layout file)')
-        file_filter.add_pattern('*.sh')
-        dialog.add_filter(file_filter)
-
-        return dialog
 
     #################### widget maintenance ####################
 
@@ -402,7 +313,7 @@ class Application:
 
 def main():
     parser = optparse.OptionParser(
-        usage="%prog [savedfile]",
+        usage="%prog",
         description="Another XRandrR GUI",
         version="%%prog %s" % __version__
     )
@@ -422,15 +333,11 @@ def main():
     )
 
     (options, args) = parser.parse_args()
-    if not args:
-        file_to_open = None
-    elif len(args) == 1:
-        file_to_open = args[0]
-    else:
-        parser.usage()
+    if len(args) >= 1:
+        parser.print_usage()
+        exit()
 
     app = Application(
-        file=file_to_open,
         randr_display=options.randr_display,
         force_version=options.force_version
     )
