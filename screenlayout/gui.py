@@ -202,6 +202,31 @@ class Application:
         self.widget.factor = value
         #self.window.resize(1, 1)
 
+    @actioncallback
+    def do_open_properties(self):
+        dialog = Gtk.Dialog(
+            _("Script Properties"), None,
+            Gtk.DialogFlags.MODAL, (Gtk.STOCK_CLOSE, Gtk.ResponseType.ACCEPT)
+        )
+        dialog.set_default_size(300, 400)
+
+        script_editor = Gtk.TextView()
+        script_buffer = script_editor.get_buffer()
+        script_buffer.set_text("\n".join(self.filetemplate))
+        script_editor.props.editable = False
+
+        # wacom_options = Gtk.Label("FIXME")
+
+        notebook = Gtk.Notebook()
+        # notebook.append_page(wacom_options, Gtk.Label(_("Wacom options")))
+        notebook.append_page(script_editor, Gtk.Label(_("Script")))
+
+        dialog.vbox.pack_start(notebook, expand=False, fill=False, padding=0)  # pylint: disable=no-member
+        dialog.show_all()
+
+        dialog.run()
+        dialog.destroy()
+
     def close_resp (self, widget, response_id):
         if response_id == Gtk.ResponseType.YES:
             os.system ('reboot')
@@ -280,6 +305,60 @@ class Application:
             )
             dialog.run()
             dialog.destroy()
+
+    @actioncallback
+    def do_new(self):
+        self.filetemplate = self.widget.load_from_x()
+
+    @actioncallback
+    def do_open(self):
+        dialog = self._new_file_dialog(
+            _("Open Layout"), Gtk.FileChooserAction.OPEN, Gtk.STOCK_OPEN
+        )
+
+        result = dialog.run()
+        filenames = dialog.get_filenames()
+        dialog.destroy()
+        if result == Gtk.ResponseType.ACCEPT:
+            assert len(filenames) == 1
+            filename = filenames[0]
+            self.filetemplate = self.widget.load_from_file(filename)
+
+    @actioncallback
+    def do_save_as(self):
+        dialog = self._new_file_dialog(
+            _("Save Layout"), Gtk.FileChooserAction.SAVE, Gtk.STOCK_SAVE
+        )
+        dialog.props.do_overwrite_confirmation = True
+
+        result = dialog.run()
+        filenames = dialog.get_filenames()
+        dialog.destroy()
+        if result == Gtk.ResponseType.ACCEPT:
+            assert len(filenames) == 1
+            filename = filenames[0]
+            if not filename.endswith('.sh'):
+                filename = filename + '.sh'
+            self.widget.save_to_file(filename, self.filetemplate)
+
+    def _new_file_dialog(self, title, dialog_type, buttontype):  # pylint: disable=no-self-use
+        dialog = Gtk.FileChooserDialog(title, None, dialog_type)
+        dialog.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
+        dialog.add_button(buttontype, Gtk.ResponseType.ACCEPT)
+
+        layoutdir = os.path.expanduser('~/.screenlayout/')
+        try:
+            os.makedirs(layoutdir)
+        except OSError:
+            pass
+        dialog.set_current_folder(layoutdir)
+
+        file_filter = Gtk.FileFilter()
+        file_filter.set_name('Shell script (Layout file)')
+        file_filter.add_pattern('*.sh')
+        dialog.add_filter(file_filter)
+
+        return dialog
 
     #################### widget maintenance ####################
 
