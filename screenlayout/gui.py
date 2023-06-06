@@ -116,11 +116,17 @@ class Application:
         actiongroup = Gtk.ActionGroup('default')
         actiongroup.add_actions([
             ("File", None, _("_File")),
+            ("New", Gtk.STOCK_NEW, None, None, None, self.do_new),
+            ("Open", Gtk.STOCK_OPEN, None, None, None, self.do_open),
+            ("SaveAs", Gtk.STOCK_SAVE_AS, None, None, None, self.do_save_as),
 
             ("Apply", Gtk.STOCK_APPLY, None, '<Control>Return', None, self.do_apply),
             ("Revert", Gtk.STOCK_UNDO, None, None, None, self.do_revert),
+            ("LayoutSettings", Gtk.STOCK_PROPERTIES, None,
+             '<Alt>Return', None, self.do_open_properties),
 
             ("Quit", Gtk.STOCK_QUIT, None, None, None, self.close_app),
+
 
             ("View", None, _("_View")),
 
