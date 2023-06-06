@@ -79,7 +79,8 @@ class XRandR:
         ret, err = proc.communicate()
         status = proc.wait()
         if status != 0:
-            raise Exception("XRandR returned error code %d: %s" %
+            if self.command != 'wlr-randr':
+                raise Exception("XRandR returned error code %d: %s" %
                             (status, err))
         if err:
             warnings.warn(
@@ -287,6 +288,9 @@ class XRandR:
     def _load_raw_lines_wayfire(self):
         output = self._output("")
         items = []
+        curw = "0"
+        curh = "0"
+        curf = "0"
         for line in output.split('\n'):
             if len (line) > 0 and not line.startswith(' '):
                 curout = (line.split())[0]
