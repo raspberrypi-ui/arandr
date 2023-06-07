@@ -111,6 +111,9 @@ class Application:
         self.tsreboot = False
         window.props.title = "Screen Layout Editor"
         window.set_icon_name('computer')
+        self.configbak = None
+        self.gconfigbak = None
+        self.original = None
 
         # actions
         actiongroup = Gtk.ActionGroup('default')
@@ -276,17 +279,26 @@ class Application:
 
         try:
             if self.widget.command == 'wlr-randr':
+                self.cbakbak = self.configbak
                 self.configbak = configparser.ConfigParser ()
                 self.configbak.read (os.path.expanduser ('~/.config/wayfire.ini'))
+                self.gbakbak = self.gconfigbak
                 self.gconfigbak = configparser.ConfigParser ()
                 self.gconfigbak.read ('/etc/wayfire/greeter.ini')
             else:
                 current = XRandR(command=self.widget.command)
                 current.load_current_state()
+                self.origbak = self.original
                 self.original = current.save_to_shellscript_string()
             if self.widget.save():
                 self.enable_revert (True)
                 self.show_confirm()
+            else:
+                if self.widget.command == 'wlr-randr':
+                    self.configbak = self.cbakbak
+                    self.gconfigbak = self.gbakbak
+                else:
+                    self.original = self.origbak
 
         except Exception as exc:  # pylint: disable=broad-except
             dialog = Gtk.MessageDialog(
