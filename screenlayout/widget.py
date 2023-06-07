@@ -225,11 +225,15 @@ class ARandRWidget(Gtk.DrawingArea):
     def config_compare(self, conf1, conf2):
         for section in conf1.sections ():
             if "output:" in section or "input-device:" in section:
+                if section not in conf2.sections ():
+                    return True
                 for option in conf1.options (section):
                     if conf1.get (section, option) != conf2.get (section, option):
                         return True
         for section in conf2.sections ():
             if "output:" in section or "input-device:" in section:
+                if section not in conf1.sections ():
+                    return True
                 for option in conf2.options (section):
                     if conf1.get (section, option) != conf2.get (section, option):
                         return True
