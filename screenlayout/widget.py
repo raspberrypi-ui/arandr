@@ -499,7 +499,8 @@ class ARandRWidget(Gtk.DrawingArea):
                     output_name, menuitem.props.active))
                 menu.add(primary)
 
-            cur = output_config.mode.name.split()
+            if output_config.mode.name is not None:
+                cur = output_config.mode.name.split()
             res_m = Gtk.Menu()
             inmenu = []
             if self.command == 'wlr-randr':
@@ -579,11 +580,12 @@ class ARandRWidget(Gtk.DrawingArea):
                 ts_i = Gtk.MenuItem(_("Touchscreen"))
                 ts_i.props.submenu = ts_m
 
-            menu.add(res_i)
-            menu.add(ref_i)
-            menu.add(or_i)
-            if len(self._xrandr.touchscreens) > 0:
-                menu.add(ts_i)
+            if len (output_state.modes):
+                menu.add(res_i)
+                menu.add(ref_i)
+                menu.add(or_i)
+                if len(self._xrandr.touchscreens) > 0:
+                    menu.add(ts_i)
 
         menu.show_all()
         return menu

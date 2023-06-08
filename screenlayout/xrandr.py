@@ -500,19 +500,20 @@ class XRandR:
                     if Feature.PRIMARY in self._xrandr.features:
                         if output.primary:
                             args.append("--primary")
-                    modres=str(output.mode.name).split(" ")
-                    args.append("--mode")
-                    args.append(str(modres[0]))
-                    args.append("--rate")
-                    if 'i' in str(modres[0]):
-                        freq = 2 * float(str(modres[1]).replace('Hz',''))
-                        args.append(str("{:.3f}".format (freq)))
-                    else:
-                        args.append(str(modres[1]).replace('Hz',''))
-                    args.append("--pos")
-                    args.append(str(output.position))
-                    args.append("--rotate")
-                    args.append (output.rotation.xname())
+                    if output.mode.name is not None:
+                        modres=str(output.mode.name).split(" ")
+                        args.append("--mode")
+                        args.append(str(modres[0]))
+                        args.append("--rate")
+                        if 'i' in str(modres[0]):
+                            freq = 2 * float(str(modres[1]).replace('Hz',''))
+                            args.append(str("{:.3f}".format (freq)))
+                        else:
+                            args.append(str(modres[1]).replace('Hz',''))
+                        args.append("--pos")
+                        args.append(str(output.position))
+                        args.append("--rotate")
+                        args.append (output.rotation.xname())
             return args
 
         class OutputConfiguration:
