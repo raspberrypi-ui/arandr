@@ -362,7 +362,7 @@ class XRandR:
                 else:  # mode
                     freq = float(line.split()[2][:-3])
                     items[-1][1].append([line.split()])
-            else:
+            elif "disconnected" not in line:
                 items.append([line, []])
         return screenline, items
 
