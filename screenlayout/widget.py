@@ -204,9 +204,12 @@ class ARandRWidget(Gtk.DrawingArea):
             key = output_config.mode.name.replace(' ','@').replace('.','')
             key = key[:len (key) - 3]
             config[section] = {}
-            config[section]['mode'] = key
-            config[section]['position'] = str(int(output_config.position[0])) + ',' + str(int(output_config.position[1]))
-            config[section]['transform'] = output_config.rotation.wayname()
+            if output_config.active:
+                config[section]['mode'] = key
+                config[section]['position'] = str(int(output_config.position[0])) + ',' + str(int(output_config.position[1]))
+                config[section]['transform'] = output_config.rotation.wayname()
+            else:
+                config[section]['mode'] = "off"
             if output_config.touchscreen != "":
                 section = "input-device:" + output_config.touchscreen
                 config[section] = {}

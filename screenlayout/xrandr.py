@@ -229,7 +229,10 @@ class XRandR:
                     output.rotations.add(rotation)
 
             currentname = None
-            curmode = hsplit[2].split('+')[0] + ' ' + hsplit[5]
+            if active:
+                curmode = hsplit[2].split('+')[0] + ' ' + hsplit[5]
+            else:
+                curmode = ""
             for detail, w, h, f in details:
                 name, _mode_raw = detail[0:2]
                 if self.command == 'wlr-randr':
@@ -291,8 +294,18 @@ class XRandR:
         curw = "0"
         curh = "0"
         curf = "0"
+        act = False
+        towrite = False
         for line in output.split('\n'):
             if len (line) > 0 and not line.startswith(' '):
+                if towrite:
+                    if act:
+                        displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
+                    else:
+                        displ[0] = curout + ' connected ()'
+                    displ.append(modes)
+                    items.append(displ)
+                towrite = True
                 curout = (line.split())[0]
                 displ = []
                 displ.append (line)
@@ -315,10 +328,18 @@ class XRandR:
                         cury = pos[1]
                     elif res[0] == 'Transform:':
                         curt = self.remap_rotation (res[1]).lower()
-                    elif res[0] == 'Scale:':
-                        displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
-                        displ.append(modes)
-                        items.append(displ)
+                    elif res[0] == 'Enabled:':
+                        if res[1] == "no" :
+                            act = False
+                        else:
+                            act = True
+        if towrite:
+            if act:
+                displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
+            else:
+                displ[0] = curout + ' connected ()'
+            displ.append(modes)
+            items.append(displ)
         current = str(curw) + 'x' + str(curh) + ' ' + str(curf)
         return current, items
 
