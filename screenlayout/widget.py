@@ -143,8 +143,11 @@ class ARandRWidget(Gtk.DrawingArea):
             with open (os.path.expanduser ('~/.config/wayfire.ini'),'w') as configfile:
                 self.gui.configbak.write (configfile)
             shutil.chown (os.path.expanduser ('~/.config/wayfire.ini'), os.environ['SUDO_USER'], os.environ['SUDO_USER'])
-            with open ('/usr/share/greeter.ini', 'w') as configfile:
-                self.gui.gconfigbak.write (configfile)
+            if self.gui.gconfigbak is not None:
+                with open ('/usr/share/greeter.ini', 'w') as configfile:
+                    self.gui.gconfigbak.write (configfile)
+            else:
+                os.remove ('/usr/share/greeter.ini')
         else:
             self._xrandr.load_from_string (self.gui.original)
             self._xrandr.save_to_x()
@@ -196,7 +199,10 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def write_wayfire_config(self,path,oldconf):
         config = configparser.ConfigParser ()
-        config.read (path)
+        if path == "/usr/share/greeter.ini" and not os.path.exists (path):
+            config.read ("/etc/wayfire/gtemplate.ini")
+        else:
+            config.read (path)
         tsunused = self._xrandr.touchscreens.copy()
         for output_name in self._xrandr.outputs:
             output_config = self._xrandr.configuration.outputs[output_name]
@@ -226,6 +232,10 @@ class ARandRWidget(Gtk.DrawingArea):
             return False
 
     def config_compare(self, conf1, conf2):
+        if conf1 is None and conf2 is not None:
+            return True
+        if conf2 is None and conf1 is not None:
+            return True
         for section in conf1.sections ():
             if "output:" in section or "input-device:" in section:
                 if section not in conf2.sections ():

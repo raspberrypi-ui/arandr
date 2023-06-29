@@ -283,8 +283,9 @@ class Application:
                 self.configbak = configparser.ConfigParser ()
                 self.configbak.read (os.path.expanduser ('~/.config/wayfire.ini'))
                 self.gbakbak = self.gconfigbak
-                self.gconfigbak = configparser.ConfigParser ()
-                self.gconfigbak.read ('/usr/share/greeter.ini')
+                if os.path.exists ('/usr/share/greeter.ini'):
+                    self.gconfigbak = configparser.ConfigParser ()
+                    self.gconfigbak.read ('/usr/share/greeter.ini')
             else:
                 current = XRandR(command=self.widget.command)
                 current.load_current_state()
