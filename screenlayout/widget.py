@@ -143,7 +143,7 @@ class ARandRWidget(Gtk.DrawingArea):
             with open (os.path.expanduser ('~/.config/wayfire.ini'),'w') as configfile:
                 self.gui.configbak.write (configfile)
             shutil.chown (os.path.expanduser ('~/.config/wayfire.ini'), os.environ['SUDO_USER'], os.environ['SUDO_USER'])
-            with open ('/etc/wayfire/greeter.ini', 'w') as configfile:
+            with open ('/usr/share/greeter.ini', 'w') as configfile:
                 self.gui.gconfigbak.write (configfile)
         else:
             self._xrandr.load_from_string (self.gui.original)
@@ -248,7 +248,7 @@ class ARandRWidget(Gtk.DrawingArea):
         if self.write_wayfire_config (path, self.gui.configbak):
             written = True
         shutil.chown (path, os.environ['SUDO_USER'], os.environ['SUDO_USER'])
-        if self.write_wayfire_config ('/etc/wayfire/greeter.ini', self.gui.gconfigbak):
+        if self.write_wayfire_config ('/usr/share/greeter.ini', self.gui.gconfigbak):
             written = True
         return written
 
