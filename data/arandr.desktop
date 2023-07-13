@@ -3,7 +3,7 @@ Name=Screen Configuration
 GenericName=Screen Settings
 GenericName[de]=Bildschirmeinstellungen
 Icon=computer
-Exec=env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -AE arandr
+Exec=env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo arandr
 Terminal=false
 Type=Application
 Categories=Settings;HardwareSettings;
