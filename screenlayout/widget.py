@@ -54,7 +54,7 @@ class ARandRWidget(Gtk.DrawingArea):
         super(ARandRWidget, self).__init__()
 
         self.command = "xrandr"
-        if os.environ.get ("WAYLAND_DISPLAY") is not None:
+        if os.environ.get ("WAYFIRE_CONFIG_FILE") is not None:
             self.command = "wlr-randr"
 
         self.window = window
