@@ -259,7 +259,6 @@ setup(name = PACKAGENAME,
             },
         data_files = [
             ('share/applications', ['data/arandr.desktop']),
-            ('share/fkms/applications', ['data/fkms/arandr.desktop']),
             ('lib/arandr', ['data/pwdarandr.sh']),
             ('share/man/man1', ['build/arandr.1.gz', 'build/unxrandr.1.gz']),
             ],
