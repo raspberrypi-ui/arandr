@@ -21,6 +21,7 @@ import os
 import optparse
 import inspect
 import configparser
+import glob
 
 # import os
 # os.environ['DISPLAY']=':0.0'
@@ -114,6 +115,12 @@ class Application:
         self.configbak = None
         self.gconfigbak = None
         self.original = None
+        if os.path.isdir ("/tmp/arandr"):
+            tmpfiles = glob.glob("/tmp/arandr/*.*")
+            for tmpfile in tmpfiles:
+                os.remove (tmpfile)
+        else:
+            os.mkdir ("/tmp/arandr")
 
         # actions
         actiongroup = Gtk.ActionGroup('default')
@@ -243,12 +250,19 @@ class Application:
         Gtk.main_quit ()
 
     def close_app (self, val):
+        self.sudo_copy ()
         if self.widget.command == 'wlr-randr' and self.tsreboot and self.rbutt.get_sensitive ():
             self.conf = Gtk.MessageDialog (self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.YES_NO, _("Changes to touchscreen will take effect on reboot.\nClick 'Yes' to reboot now, or 'No' to reboot later."))
             self.conf.connect ("response", self.close_resp)
             self.conf.run ()
         else:
             Gtk.main_quit ()
+
+    def sudo_copy (self):
+        ag = self.uimanager.get_action_groups()
+        rev = ag[0].get_action ("Revert")
+        if rev.get_sensitive () :
+            os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A cp /tmp/arandr/*.* /usr/share/")
 
     def enable_revert (self, state):
         ag = self.uimanager.get_action_groups()

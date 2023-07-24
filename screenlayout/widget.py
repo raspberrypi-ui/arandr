@@ -142,12 +142,11 @@ class ARandRWidget(Gtk.DrawingArea):
         if self.command == 'wlr-randr':
             with open (os.path.expanduser ('~/.config/wayfire.ini'),'w') as configfile:
                 self.gui.configbak.write (configfile)
-            shutil.chown (os.path.expanduser ('~/.config/wayfire.ini'), os.environ['SUDO_USER'], os.environ['SUDO_USER'])
             if self.gui.gconfigbak is not None:
-                with open ('/usr/share/greeter.ini', 'w') as configfile:
+                with open ("/tmp/arandr/greeter.ini", 'w') as configfile:
                     self.gui.gconfigbak.write (configfile)
             else:
-                os.remove ('/usr/share/greeter.ini')
+                os.remove ("/tmp/arandr/greeter.ini")
         else:
             self._xrandr.load_from_string (self.gui.original)
             self._xrandr.save_to_x()
@@ -173,7 +172,7 @@ class ARandRWidget(Gtk.DrawingArea):
     def save_dispsetup_sh(self):
         data = self._xrandr.save_to_shellscript_string(None, None)
         cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
-        file = open ("/usr/share/dispsetup.sh", "w")
+        file = open ("/tmp/arandr/dispsetup.sh", "w")
         file.write (SHELLSHEBANG)
         file.write ("\nif ! raspi-config nonint is_pi || raspi-config nonint is_kms ; then\nif ")
         file.write (cdata)
@@ -186,20 +185,20 @@ class ARandRWidget(Gtk.DrawingArea):
         file.close ()
 
     def save_touchscreen(self):
-        if os.path.isfile ("/usr/share/tssetup.sh"):
-            os.remove ("/usr/share/tssetup.sh")
+        if os.path.isfile ("/tmp/arandr/tssetup.sh"):
+            os.remove ("/tmp/arandr/tssetup.sh")
         for output_name in self._xrandr.outputs:
             output_config = self._xrandr.configuration.outputs[output_name]
             if output_config.touchscreen != "":
                 tscmd = 'xinput --map-to-output "' + output_config.touchscreen + '" ' + output_name
                 subprocess.run (tscmd, shell=True)
-                file = open ("/usr/share/tssetup.sh", "a")
+                file = open ("/tmp/arandr/tssetup.sh", "a")
                 file.write ("if xinput | grep -q \"" + output_config.touchscreen + "\" ; then " + tscmd + " ; fi")
                 file.close ()
 
     def write_wayfire_config(self,path,oldconf):
         config = configparser.ConfigParser ()
-        if path == "/usr/share/greeter.ini" and not os.path.exists (path):
+        if "greeter.ini" in path and not os.path.exists (path):
             config.read ("/etc/wayfire/gtemplate.ini")
         else:
             config.read (path)
@@ -257,8 +256,7 @@ class ARandRWidget(Gtk.DrawingArea):
         path = os.path.expanduser ('~/.config/wayfire.ini')
         if self.write_wayfire_config (path, self.gui.configbak):
             written = True
-        shutil.chown (path, os.environ['SUDO_USER'], os.environ['SUDO_USER'])
-        if self.write_wayfire_config ('/usr/share/greeter.ini', self.gui.gconfigbak):
+        if self.write_wayfire_config ("/tmp/arandr/greeter.ini", self.gui.gconfigbak):
             written = True
         return written
 
