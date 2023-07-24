@@ -230,7 +230,10 @@ class XRandR:
 
             currentname = None
             if active:
-                curmode = hsplit[2].split('+')[0] + ' ' + hsplit[5]
+                if hsplit[4] == "left" or hsplit[4] == "right":
+                    curmode = str(geometry.height) + 'x' + str(geometry.width) + ' ' + hsplit[5]
+                else:
+                    curmode = str(geometry.width) + 'x' + str(geometry.height) + ' ' + hsplit[5]
             else:
                 curmode = ""
             for detail, w, h, f in details:
@@ -328,6 +331,10 @@ class XRandR:
                         cury = pos[1]
                     elif res[0] == 'Transform:':
                         curt = self.remap_rotation (res[1]).lower()
+                        if curt == "left" or curt == "right":
+                            tmp = curw
+                            curw = curh
+                            curh = tmp
                     elif res[0] == 'Enabled:':
                         if res[1] == "no" :
                             act = False
