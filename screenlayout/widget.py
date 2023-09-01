@@ -207,7 +207,6 @@ class ARandRWidget(Gtk.DrawingArea):
             output_config = self._xrandr.configuration.outputs[output_name]
             section = 'output:' + output_name
             key = output_config.mode.name.replace(' ','@').replace('.','')
-            key = key[:len (key) - 3]
             config[section] = {}
             if output_config.active:
                 config[section]['mode'] = key
@@ -537,7 +536,10 @@ class ARandRWidget(Gtk.DrawingArea):
             for r in output_state.modes:
                 ms = r.name.split()
                 if cur[0] == ms[0]:
-                    i = Gtk.CheckMenuItem(str(ms[1]))
+                    if ("Hz" in str(ms[1])) :
+                        i = Gtk.CheckMenuItem(str(ms[1]))
+                    else:
+                        i = Gtk.CheckMenuItem(str(ms[1]) +"Hz")
                     i.props.draw_as_radio = True
                     i.props.active = (cur[1] == ms[1])
                     def _ref_set(menuitem, on, r):

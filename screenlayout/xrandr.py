@@ -319,11 +319,12 @@ class XRandR:
                     modes.append ([line.strip().split()])
                     modes[-1].append (res[0])
                     modes[-1].append (res[1])
-                    modes[-1].append (res[2])
+                    strfreq = "%.3f" % float(res[2])
+                    modes[-1].append (strfreq)
                     if 'current' in line:
                         curw = res[0]
                         curh = res[1]
-                        curf = res[2]
+                        curf = strfreq
                 elif len (res) == 2:
                     if res[0] == 'Position:':
                         pos = res[1].split(',')
