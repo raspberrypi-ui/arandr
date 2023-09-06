@@ -174,11 +174,11 @@ class ARandRWidget(Gtk.DrawingArea):
         cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
         file = open ("/tmp/arandr/dispsetup.sh", "w")
         file.write (SHELLSHEBANG)
-        file.write ("\nif ! raspi-config nonint is_pi || raspi-config nonint is_kms ; then\nif ")
+        file.write ("\nif ")
         file.write (cdata)
         file.write (" --dryrun ; then \n");
         file.write (cdata)
-        file.write ("\nfi\nfi\n");
+        file.write ("\nfi\n");
         file.write ("if [ -e /usr/share/tssetup.sh ] ; then\n. /usr/share/tssetup.sh\nfi\n");
         file.write ("if [ -e /usr/share/ovscsetup.sh ] ; then\n. /usr/share/ovscsetup.sh\nfi\n");
         file.write ("exit 0");
