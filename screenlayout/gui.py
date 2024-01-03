@@ -20,7 +20,6 @@
 import os
 import optparse
 import inspect
-import configparser
 import glob
 
 # import os
