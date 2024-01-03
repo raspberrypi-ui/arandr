@@ -107,7 +107,10 @@ class XRandR:
             raise FileLoadError('No recognized xrandr command in this shell script.')
         if len(xrandrlines) > 1:
             raise FileLoadError('More than one xrandr line in this shell script.')
-        self._load_from_commandlineargs(lines[xrandrlines[0]].strip())
+        if self.command == 'xrandr':
+            self._load_from_commandlineargs(lines[xrandrlines[0]].strip())
+        else:
+            self._load_from_commandlineargswlr(lines[xrandrlines[0]].strip())
         lines[xrandrlines[0]] = '%(xrandr)s'
 
         return lines
@@ -169,6 +172,45 @@ class XRandR:
                     elif part[0] == '--pos':
                         output.position = Position(part[1])
                     elif part[0] == '--rotate':
+                        output.rotation = self.remap_rotation(part[1])
+                    else:
+                        raise FileSyntaxError()
+                output.active = True
+
+    def _load_from_commandlineargswlr(self, commandline):
+        self.load_current_state()
+
+        args = BetterList(commandline.split(" "))
+        if args.pop(0) != 'wlr-randr':
+            raise FileSyntaxError()
+        # first part is empty, exclude empty parts
+        options = dict((a[0], a[1:]) for a in args.split('--output') if a)
+
+        for output_name, output_argument in options.items():
+            output = self.configuration.outputs[output_name]
+            output_state = self.state.outputs[output_name]
+            output.primary = False
+            if output_argument == ['--off']:
+                output.active = False
+            else:
+                if len(output_argument) % 2 != 0:
+                    raise FileSyntaxError()
+                parts = [
+                    (output_argument[2 * i], output_argument[2 * i + 1])
+                    for i in range(len(output_argument) // 2)
+                ]
+                for part in parts:
+                    if part[0] == '--mode':
+                        mode = part[1].replace('@',' ')
+                        for namedmode in output_state.modes:
+                            if namedmode.name == mode:
+                                output.mode = namedmode
+                                break
+                        else:
+                            raise FileLoadError("Not a known mode: %s" % (part[1]))
+                    elif part[0] == '--pos':
+                        output.position = Position(part[1].replace(',','x'))
+                    elif part[0] == '--transform':
                         output.rotation = self.remap_rotation(part[1])
                     else:
                         raise FileSyntaxError()
@@ -425,10 +467,15 @@ class XRandR:
         if not template:
             template = self.DEFAULTTEMPLATE
         template = '\n'.join(template) + '\n'
+        if self.command != 'wlr-randr':
+            data = {
+                'xrandr': "xrandr " + " ".join(self.configuration.commandlineargs())
+            }
+        else:
+            data = {
+                'xrandr': "wlr-randr " + " ".join(self.configuration.commandlineargswayfire())
+            }
 
-        data = {
-            'xrandr': "xrandr " + " ".join(self.configuration.commandlineargs())
-        }
         if additional:
             data.update(additional)
 
@@ -543,6 +590,26 @@ class XRandR:
                         args.append(str(output.position))
                         args.append("--rotate")
                         args.append (output.rotation.xname())
+            return args
+
+        def commandlineargswayfire(self):
+            args = []
+            for output_name, output in self.outputs.items():
+                args.append("--output")
+                args.append(output_name)
+                if not output.active:
+                    args.append("--off")
+                else:
+                    if Feature.PRIMARY in self._xrandr.features:
+                        if output.primary:
+                            args.append("--primary")
+                    modres=str(output.mode.name).split(" ")
+                    args.append("--mode")
+                    args.append(str(modres[0]) + '@' + modres[1])
+                    args.append("--pos")
+                    args.append(str(output.position).replace('x',','))
+                    args.append("--transform")
+                    args.append(output.rotation.wayname())
             return args
 
         class OutputConfiguration:

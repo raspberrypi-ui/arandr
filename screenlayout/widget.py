@@ -54,8 +54,12 @@ class ARandRWidget(Gtk.DrawingArea):
         super(ARandRWidget, self).__init__()
 
         self.command = "xrandr"
-        if os.environ.get ("WAYFIRE_CONFIG_FILE") is not None:
+        if os.environ.get ("WAYLAND_DISPLAY") is not None:
             self.command = "wlr-randr"
+            if os.environ.get ("WAYFIRE_CONFIG_FILE") is not None:
+                self.compositor = "wayfire"
+            else:
+                self.compositor = "labwc"
 
         self.window = window
         self._factor = factor
@@ -139,16 +143,10 @@ class ARandRWidget(Gtk.DrawingArea):
         self.emit('changed')
 
     def revert(self):
+        self._xrandr.load_from_string (self.gui.original)
         if self.command == 'wlr-randr':
-            with open (os.path.expanduser ('~/.config/wayfire.ini'),'w') as configfile:
-                self.gui.configbak.write (configfile)
-            if self.gui.gconfigbak is not None:
-                with open ("/tmp/arandr/greeter.ini", 'w') as configfile:
-                    self.gui.gconfigbak.write (configfile)
-            else:
-                os.remove ("/tmp/arandr/greeter.ini")
+            self.save_wayfire()
         else:
-            self._xrandr.load_from_string (self.gui.original)
             self._xrandr.save_to_x()
             self.save_dispsetup_sh()
             self.save_touchscreen()
@@ -156,7 +154,10 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def save(self):
         if self.command == 'wlr-randr':
-            written = self.save_wayfire()
+            if self._xrandr.save_to_shellscript_string () == self.gui.original:
+                return False
+            self.save_wayfire()
+            return True
         else:
             written = False
             newconf = "xrandr " + " ".join(self._xrandr.configuration.commandlineargs())
@@ -196,7 +197,7 @@ class ARandRWidget(Gtk.DrawingArea):
                 file.write ("if xinput | grep -q \"" + output_config.touchscreen + "\" ; then " + tscmd + " ; fi")
                 file.close ()
 
-    def write_wayfire_config(self,path,oldconf):
+    def write_wayfire_config(self,path):
         config = configparser.ConfigParser ()
         if "greeter.ini" in path and not os.path.exists (path):
             config.read ("/etc/wayfire/gtemplate.ini")
@@ -222,42 +223,39 @@ class ARandRWidget(Gtk.DrawingArea):
         for tsu in tsunused:
             section = "input-device:" + tsu
             config.remove_section (section)
-        if self.config_compare (config, oldconf):
-            with open (path, 'w') as configfile:
-                config.write (configfile)
-            return True
-        else:
-            return False
+        with open (path, 'w') as configfile:
+            config.write (configfile)
 
-    def config_compare(self, conf1, conf2):
-        if conf1 is None and conf2 is not None:
-            return True
-        if conf2 is None and conf1 is not None:
-            return True
-        for section in conf1.sections ():
-            if "output:" in section or "input-device:" in section:
-                if section not in conf2.sections ():
-                    return True
-                for option in conf1.options (section):
-                    if conf1.get (section, option) != conf2.get (section, option):
-                        return True
-        for section in conf2.sections ():
-            if "output:" in section or "input-device:" in section:
-                if section not in conf1.sections ():
-                    return True
-                for option in conf2.options (section):
-                    if conf1.get (section, option) != conf2.get (section, option):
-                        return True
-        return False
+    def write_labwc_config(self,path):
+        command = self._xrandr.save_to_shellscript_string().split('\n')[1]
+        if not os.path.exists (path):
+            outdata = command
+        else:
+            outdata = ''
+            found = False
+            with open (path, "r") as infile:
+                for line in infile:
+                    if line.find ('wlr-randr') != -1:
+                        outdata += command
+                        found = True
+                    else:
+                        outdata += line
+                if found is False:
+                    outdata += command
+        with open (path, "w") as outfile:
+            outfile.write(outdata)
 
     def save_wayfire(self):
-        written = False
-        path = os.path.expanduser ('~/.config/wayfire.ini')
-        if self.write_wayfire_config (path, self.gui.configbak):
-            written = True
-        if self.write_wayfire_config ("/tmp/arandr/greeter.ini", self.gui.gconfigbak):
-            written = True
-        return written
+        if self.compositor == "wayfire":
+            path = os.path.expanduser ('~/.config/wayfire.ini')
+            self.write_wayfire_config (path)
+            self.write_wayfire_config ("/tmp/arandr/greeter.ini")
+        else:
+            self._xrandr._run(*self._xrandr.configuration.commandlineargswayfire())
+            path = os.path.expanduser ('~/.config/labwc/autostart')
+            self.write_labwc_config (path)
+            self.write_labwc_config ("/tmp/arandr/autostart")
+        return True
 
     #################### doing changes ####################
 

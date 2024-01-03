@@ -112,8 +112,6 @@ class Application:
         self.tsreboot = False
         window.props.title = "Screen Layout Editor"
         window.set_icon_name('computer')
-        self.configbak = None
-        self.gconfigbak = None
         self.original = None
         if os.path.isdir ("/tmp/arandr"):
             tmpfiles = glob.glob("/tmp/arandr/*.*")
@@ -262,7 +260,11 @@ class Application:
         ag = self.uimanager.get_action_groups()
         rev = ag[0].get_action ("Revert")
         if rev.get_sensitive () :
-            os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A cp /tmp/arandr/*.* /usr/share/")
+            if self.widget.command == 'wlr-randr' and self.widget.compositor == 'labwc':
+                os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A mkdir -p /usr/share/labwc/")
+                os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A cp /tmp/arandr/* /usr/share/labwc/")
+            else:
+                os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A cp /tmp/arandr/*.* /usr/share/")
 
     def enable_revert (self, state):
         ag = self.uimanager.get_action_groups()
@@ -292,28 +294,15 @@ class Application:
             return
 
         try:
-            if self.widget.command == 'wlr-randr':
-                self.cbakbak = self.configbak
-                self.configbak = configparser.ConfigParser ()
-                self.configbak.read (os.path.expanduser ('~/.config/wayfire.ini'))
-                self.gbakbak = self.gconfigbak
-                if os.path.exists ('/usr/share/greeter.ini'):
-                    self.gconfigbak = configparser.ConfigParser ()
-                    self.gconfigbak.read ('/usr/share/greeter.ini')
-            else:
-                current = XRandR(command=self.widget.command)
-                current.load_current_state()
-                self.origbak = self.original
-                self.original = current.save_to_shellscript_string()
+            current = XRandR(command=self.widget.command)
+            current.load_current_state()
+            self.origbak = self.original
+            self.original = current.save_to_shellscript_string()
             if self.widget.save():
                 self.enable_revert (True)
                 self.show_confirm()
             else:
-                if self.widget.command == 'wlr-randr':
-                    self.configbak = self.cbakbak
-                    self.gconfigbak = self.gbakbak
-                else:
-                    self.original = self.origbak
+                self.original = self.origbak
 
         except Exception as exc:  # pylint: disable=broad-except
             dialog = Gtk.MessageDialog(
