@@ -248,7 +248,7 @@ class Application:
 
     def close_app (self, val):
         self.sudo_copy ()
-        if self.widget.command == 'wlr-randr' and self.tsreboot and self.rbutt.get_sensitive ():
+        if self.widget.command == 'wlr-randr' and self.widget.compositor == 'wayfire'and self.tsreboot and self.rbutt.get_sensitive ():
             self.conf = Gtk.MessageDialog (self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.YES_NO, _("Changes to touchscreen will take effect on reboot.\nClick 'Yes' to reboot now, or 'No' to reboot later."))
             self.conf.connect ("response", self.close_resp)
             self.conf.run ()

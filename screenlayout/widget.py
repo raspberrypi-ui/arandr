@@ -24,6 +24,7 @@ import stat
 import subprocess
 import shutil
 import configparser
+import xml.etree.ElementTree as xmlet
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -73,7 +74,7 @@ class ARandRWidget(Gtk.DrawingArea):
 
         self.setup_draganddrop()
 
-        self._xrandr = XRandR(display=display, force_version=force_version, command=self.command)
+        self._xrandr = XRandR(display=display, force_version=force_version, command=self.command, compositor=self.compositor)
         self.gui = gui
 
         self.connect('draw', self.do_expose_event)
@@ -154,7 +155,7 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def save(self):
         if self.command == 'wlr-randr':
-            if self._xrandr.save_to_shellscript_string () == self.gui.original:
+            if self._xrandr.save_to_shellscript_string () == self.gui.original and not self.gui.tsreboot:
                 return False
             self.save_wayfire()
             return True
@@ -245,6 +246,25 @@ class ARandRWidget(Gtk.DrawingArea):
         with open (path, "w") as outfile:
             outfile.write(outdata)
 
+    def write_labwc_touchscreen(self,path):
+        xmlet.register_namespace('',"http://openbox.org/3.4/rc")
+        if os.path.isfile (path):
+            tree = xmlet.parse(path)
+        else:
+            root = xmlet.Element("openbox_config")
+            root.set("xmlns", "http://openbox.org/3.4/rc")
+            tree = xmlet.ElementTree(root)
+        root = tree.getroot()
+        for child in root.findall("{http://openbox.org/3.4/rc}touch"):
+            root.remove(child)
+        for output_name in self._xrandr.outputs:
+            output_config = self._xrandr.configuration.outputs[output_name]
+            if output_config.touchscreen != "":
+                child = xmlet.Element("touch")
+                child.set("mapToOutput", output_name)
+                root.append(child)
+        tree.write(path, xml_declaration=True, method="xml", encoding='UTF-8')
+
     def save_wayfire(self):
         if self.compositor == "wayfire":
             path = os.path.expanduser ('~/.config/wayfire.ini')
@@ -254,7 +274,12 @@ class ARandRWidget(Gtk.DrawingArea):
             self._xrandr._run(*self._xrandr.configuration.commandlineargswayfire())
             path = os.path.expanduser ('~/.config/labwc/autostart')
             self.write_labwc_config (path)
-            self.write_labwc_config ("/tmp/arandr/autostart")
+            self.write_labwc_config ('/tmp/arandr/autostart')
+            if self.gui.tsreboot:
+                path = os.path.expanduser ('~/.config/labwc/rc.xml')
+                self.write_labwc_touchscreen (path)
+                self.write_labwc_touchscreen ('/tmp/arandr/rc.xml')
+                os.system ("labwc --reconfigure")
         return True
 
     #################### doing changes ####################

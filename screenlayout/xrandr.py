@@ -20,6 +20,7 @@ import os
 import subprocess
 import warnings
 import configparser
+import xml.etree.ElementTree as xmlet
 from functools import reduce
 
 from .auxiliary import (
@@ -42,10 +43,11 @@ class XRandR:
     state = None
     command = 'xrandr'
 
-    def __init__(self, display=None, force_version=False, command='xrandr'):
+    def __init__(self, display=None, force_version=False, command='xrandr', compositor=''):
         """Create proxy object and check for xrandr at `display`. Fail with
         untested versions unless `force_version` is True."""
         self.command = command
+        self.compositor = compositor
         self.environ = dict(os.environ)
         if display:
             self.environ['DISPLAY'] = display
@@ -314,13 +316,23 @@ class XRandR:
                     output.modes.append(NamedSize(size, name=name))
             touchscreen = ""
             if self.command == 'wlr-randr':
-                config = configparser.ConfigParser ()
-                config.read (os.path.expanduser ('~/.config/wayfire.ini'))
-                for ts in self.touchscreens:
-                    section = "input-device:" + ts
-                    dev = config.get (section, "output", fallback = None)
-                    if dev == output.name:
-                        touchscreen = ts
+                if self.compositor == "wayfire":
+                    config = configparser.ConfigParser ()
+                    config.read (os.path.expanduser ('~/.config/wayfire.ini'))
+                    for ts in self.touchscreens:
+                        section = "input-device:" + ts
+                        dev = config.get (section, "output", fallback = None)
+                        if dev == output.name:
+                            touchscreen = ts
+                else:
+                    rcpath = os.path.expanduser ('~/.config/labwc/rc.xml')
+                    if os.path.isfile (rcpath):
+                        tree = xmlet.parse(rcpath)
+                        root = tree.getroot()
+                        for child in root.findall("{http://openbox.org/3.4/rc}touch"):
+                            for ts in self.touchscreens:
+                                if child.get('mapToOutput') == output.name:
+                                    touchscreen = ts
             else:
                 if os.path.isfile ("/usr/share/tssetup.sh"):
                     tsfile = open ("/usr/share/tssetup.sh", "r")
