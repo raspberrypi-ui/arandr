@@ -273,6 +273,9 @@ class ARandRWidget(Gtk.DrawingArea):
             self.write_wayfire_config ("/tmp/arandr/greeter.ini")
         else:
             self._xrandr._run(*self._xrandr.configuration.commandlineargswayfire())
+            path = os.path.expanduser ('~/.config/labwc')
+            if not os.path.isdir (path):
+                os.mkdir (path)
             path = os.path.expanduser ('~/.config/labwc/autostart')
             self.write_labwc_config (path)
             self.write_labwc_config ('/tmp/arandr/autostart')
