@@ -329,7 +329,7 @@ class XRandR:
                     if os.path.isfile (rcpath):
                         tree = xmlet.parse(rcpath)
                         root = tree.getroot()
-                        for child in root.findall("{http://openbox.org/3.4/rc}touch"):
+                        for child in root.iter("{http://openbox.org/3.4/rc}touch"):
                             for ts in self.touchscreens:
                                 if child.get('mapToOutput') == output.name:
                                     touchscreen = ts

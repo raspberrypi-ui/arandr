@@ -256,12 +256,16 @@ class ARandRWidget(Gtk.DrawingArea):
             root.set("xmlns", "http://openbox.org/3.4/rc")
             tree = xmlet.ElementTree(root)
         root = tree.getroot()
-        for child in root.findall("{http://openbox.org/3.4/rc}touch"):
-            root.remove(child)
+        to_remove = []
+        for child in root.iter("{http://openbox.org/3.4/rc}touch"):
+            to_remove.append(child)
+        for rem in to_remove:
+            root.remove(rem)
         for output_name in self._xrandr.outputs:
             output_config = self._xrandr.configuration.outputs[output_name]
             if output_config.touchscreen != "":
                 child = xmlet.Element("touch")
+                child.set("deviceName", output_config.touchscreen)
                 child.set("mapToOutput", output_name)
                 root.append(child)
         tree.write(path, xml_declaration=True, method="xml", encoding='UTF-8')
