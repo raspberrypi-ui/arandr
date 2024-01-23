@@ -201,8 +201,11 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def write_wayfire_config(self,path):
         config = configparser.ConfigParser ()
-        if "greeter.ini" in path and not os.path.exists (path):
-            config.read ("/etc/wayfire/gtemplate.ini")
+        if "greeter.ini" in path:
+            if os.path.exists ("/usr/share/greeter.ini"):
+                config.read ("/usr/share/greeter.ini")
+            else:
+                config.read ("/etc/wayfire/gtemplate.ini")
         else:
             config.read (path)
         tsunused = self._xrandr.touchscreens.copy()
