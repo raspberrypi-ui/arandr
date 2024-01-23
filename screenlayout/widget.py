@@ -232,6 +232,7 @@ class ARandRWidget(Gtk.DrawingArea):
             config.write (configfile)
 
     def write_labwc_config(self,path):
+        # this overwrites any existing autostart - should append if already there !!!!!
         command = self._xrandr.save_to_shellscript_string().split('\n')[1]
         if not os.path.exists (path):
             outdata = command
@@ -251,8 +252,9 @@ class ARandRWidget(Gtk.DrawingArea):
             outfile.write(outdata)
 
     def write_labwc_touchscreen(self,path):
+        # need to read existing greeter config if it exists, as for write_wayfire_config !!!!!
         xmlet.register_namespace('',"http://openbox.org/3.4/rc")
-        if os.path.isfile (path):
+        if os.path.isfile(path):
             tree = xmlet.parse(path)
         else:
             root = xmlet.Element("openbox_config")
