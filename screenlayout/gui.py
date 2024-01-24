@@ -111,8 +111,6 @@ class Application:
         self.tsreboot = False
         window.props.title = "Screen Layout Editor"
         window.set_icon_name('computer')
-        self.original = None
-        self.originalts = None
         if os.path.isdir ("/tmp/arandr"):
             tmpfiles = glob.glob("/tmp/arandr/*.*")
             for tmpfile in tmpfiles:
@@ -168,6 +166,12 @@ class Application:
             window=self.window, gui=self
         )
         self.widget.reload()
+
+        self.torev = self.widget._xrandr.save_to_shellscript_string()
+        self.torevts = self.widget._xrandr.get_touchscreen_setup()
+
+        self.rev = None
+        self.revts = None
 
         self.widget.connect('changed', self._widget_changed)
         self._widget_changed(self.widget)
@@ -294,18 +298,9 @@ class Application:
             return
 
         try:
-            current = XRandR(command=self.widget.command)
-            current.load_current_state()
-            self.origbak = self.original
-            self.original = current.save_to_shellscript_string()
-            self.origtsbak = self.originalts
-            self.origts = current.get_touchscreen_setup()
             if self.widget.save():
                 self.enable_revert (True)
                 self.show_confirm()
-            else:
-                self.original = self.origbak
-                self.origts = self.origtsbak
 
         except Exception as exc:  # pylint: disable=broad-except
             dialog = Gtk.MessageDialog(
@@ -317,6 +312,8 @@ class Application:
 
     @actioncallback
     def do_revert(self):
+        if self.rev == None:
+            return
         if self.widget.abort_if_unsafe():
             return
 

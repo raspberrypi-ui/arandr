@@ -145,14 +145,25 @@ class ARandRWidget(Gtk.DrawingArea):
         self.emit('changed')
 
     def revert(self):
-        self._xrandr.load_from_string (self.gui.original)
-        self._xrandr.load_ts_from_string (self.gui.origts)
+        self._xrandr.load_from_string (self.gui.rev)
+        self._xrandr.load_ts_from_string (self.gui.revts)
+        self.gui.torev = self.gui.rev
+        self.gui.torevts = self.gui.revts
+        self.gui.rev = None
+        self.gui.revts = None
+
         self._xrandr.do_save()
         self.reload()
 
     def save(self):
-        if self._xrandr.save_to_shellscript_string () == self.gui.original and self._xrandr.get_touchscreen_setup () == self.gui.origts:
+        if self.gui.torev == self._xrandr.save_to_shellscript_string() and self.gui.torevts == self._xrandr.get_touchscreen_setup():
             return False
+
+        self.gui.rev = self.gui.torev
+        self.gui.revts = self.gui.torevts
+        self.gui.torev = self._xrandr.save_to_shellscript_string()
+        self.gui.torevts = self._xrandr.get_touchscreen_setup()
+
         self._xrandr.do_save()
         self.reload()
         return True
