@@ -64,7 +64,7 @@ class XRandR:
             if " 1.2" not in version_output:
                 self.features.add(Feature.PRIMARY)
 
-        self.find_touchscreens()
+        self._find_touchscreens()
 
     def _get_outputs(self):
         assert self.state.outputs.keys() == self.configuration.outputs.keys()
@@ -81,12 +81,9 @@ class XRandR:
         ret, err = proc.communicate()
         status = proc.wait()
         if status != 0:
-            if self.command != 'wlr-randr':
-                raise Exception("XRandR returned error code %d: %s" %
-                            (status, err))
+            raise Exception(self.command + " returned error code %d: %s" % (status, err))
         if err:
-            warnings.warn(
-                "XRandR wrote to stderr, but did not report an error (Message was: %r)" % err)
+            warnings.warn(self.command + " wrote to stderr, but did not report an error (Message was: %r)" % err)
         return ret.decode('utf-8')
 
     def _run(self, *args):
@@ -117,7 +114,7 @@ class XRandR:
 
         return lines
 
-    def remap_rotation(self, rotname):
+    def _remap_rotation(self, rotname):
         if rotname.isnumeric():
             name = ('Left', 'Inverted', 'Right')[int(int(rotname) / 90 - 1)]
         else:
@@ -174,7 +171,7 @@ class XRandR:
                     elif part[0] == '--pos':
                         output.position = Position(part[1])
                     elif part[0] == '--rotate':
-                        output.rotation = self.remap_rotation(part[1])
+                        output.rotation = self._remap_rotation(part[1])
                     else:
                         raise FileSyntaxError()
                 output.active = True
@@ -213,7 +210,7 @@ class XRandR:
                     elif part[0] == '--pos':
                         output.position = Position(part[1].replace(',','x'))
                     elif part[0] == '--transform':
-                        output.rotation = self.remap_rotation(part[1])
+                        output.rotation = self._remap_rotation(part[1])
                     else:
                         raise FileSyntaxError()
                 output.active = True
@@ -385,7 +382,7 @@ class XRandR:
                         curx = pos[0]
                         cury = pos[1]
                     elif res[0] == 'Transform:':
-                        curt = self.remap_rotation (res[1]).lower()
+                        curt = self._remap_rotation (res[1]).lower()
                         if curt == "left" or curt == "right":
                             tmp = curw
                             curw = curh
@@ -405,7 +402,7 @@ class XRandR:
         current = str(curw) + 'x' + str(curh) + ' ' + str(curf)
         return current, items
 
-    def find_touchscreens(self):
+    def _find_touchscreens(self):
        res = subprocess.run ("libinput list-devices | tr \\\\n @ | sed 's/@@/\\\n/g' | grep \"Capabilities:.*touch\" | sed 's/Device:[ \\\t]*//' | cut -d @ -f 1", shell=True, capture_output=True, encoding='utf8')
        self.touchscreens = res.stdout.splitlines()
 
@@ -493,10 +490,6 @@ class XRandR:
 
         return template % data
 
-    def save_to_x(self):
-        self.check_configuration()
-        self._run(*self.configuration.commandlineargs())
-
     def check_configuration(self):
         vmax = self.state.virtual.max
 
@@ -526,6 +519,142 @@ class XRandR:
             if output_config.position[0] < 0 or output_config.position[1] < 0:
                 raise InadequateConfiguration(
                     _("An output is outside the virtual screen."))
+
+    def do_save(self):
+        self.check_configuration()
+        if self.compositor == 'openbox':
+            self._run(*self.configuration.commandlineargs())
+            self._write_dispsetup_sh()
+        elif self.compositor == "labwc":
+            self._run(*self.configuration.commandlineargswayfire())
+            path = os.path.expanduser ('~/.config/labwc')
+            if not os.path.isdir (path):
+                os.mkdir (path)
+            path = os.path.expanduser ('~/.config/labwc/autostart')
+            self._write_labwc_config (path)
+            self._write_labwc_config ('/tmp/arandr/autostart')
+            # may want to do next bit conditionally... !!!!
+            path = os.path.expanduser ('~/.config/labwc/rc.xml')
+            self._write_labwc_touchscreen (path)
+            self._write_labwc_touchscreen ('/tmp/arandr/rc.xml')
+            os.system ("labwc --reconfigure")
+        elif self.compositor == "wayfire":
+            path = os.path.expanduser ('~/.config/wayfire.ini')
+            self._write_wayfire_config (path)
+            self._write_wayfire_config ("/tmp/arandr/greeter.ini")
+
+    def _write_dispsetup_sh(self):
+        data = self.save_to_shellscript_string(None, None)
+        cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
+        file = open ("/tmp/arandr/dispsetup.sh", "w")
+        file.write (SHELLSHEBANG)
+        file.write ("\nif ")
+        file.write (cdata)
+        file.write (" --dryrun ; then \n");
+        file.write (cdata)
+        file.write ("\nfi\n");
+        for output_name in self.outputs:
+            output_config = self.configuration.outputs[output_name]
+            if output_config.touchscreen != "":
+                tscmd = 'xinput --map-to-output "' + output_config.touchscreen + '" ' + output_name
+                subprocess.run (tscmd, shell=True)
+                file.write ("if xinput | grep -q \"" + output_config.touchscreen + "\" ; then " + tscmd + " ; fi\n")
+        file.write ("if [ -e /usr/share/ovscsetup.sh ] ; then\n. /usr/share/ovscsetup.sh\nfi\n");
+        file.write ("exit 0");
+        file.close ()
+
+    def _write_wayfire_config(self,path):
+        config = configparser.ConfigParser ()
+        if "/tmp/arandr" in path:
+            if os.path.exists ("/usr/share/greeter.ini"):
+                config.read ("/usr/share/greeter.ini")
+            else:
+                config.read ("/etc/wayfire/gtemplate.ini")
+        else:
+            config.read (path)
+        tsunused = self.touchscreens.copy()
+        for output_name in self.outputs:
+            output_config = self.configuration.outputs[output_name]
+            section = 'output:' + output_name
+            key = output_config.mode.name.replace(' ','@').replace('.','')
+            config[section] = {}
+            if output_config.active:
+                config[section]['mode'] = key
+                config[section]['position'] = str(int(output_config.position[0])) + ',' + str(int(output_config.position[1]))
+                config[section]['transform'] = output_config.rotation.wayname()
+            else:
+                config[section]['mode'] = "off"
+            if output_config.touchscreen != "":
+                section = "input-device:" + output_config.touchscreen
+                config[section] = {}
+                config[section]["output"] = output_name
+                tsunused.remove (output_config.touchscreen)
+        for tsu in tsunused:
+            section = "input-device:" + tsu
+            config.remove_section (section)
+        with open (path, 'w') as configfile:
+            config.write (configfile)
+
+    def _write_labwc_config(self,path):
+        command = self.save_to_shellscript_string().split('\n')[1] + " &"
+        if "/tmp/arandr" in path:
+            inpath = "/usr/share/labwc/autostart"
+        else:
+            inpath = path
+        if not os.path.exists (inpath):
+            outdata = command
+        else:
+            outdata = ''
+            found = False
+            with open (inpath, "r") as infile:
+                for line in infile:
+                    if line.find ('wlr-randr') != -1:
+                        outdata += command
+                        found = True
+                    else:
+                        outdata += line
+                if found is False:
+                    if line.strip()[-1] != '&':
+                        outdata = outdata.rstrip() + " &\n"
+                    outdata += command
+        with open (path, "w") as outfile:
+            outfile.write(outdata)
+
+    def _write_labwc_touchscreen(self,path):
+        # need to read existing greeter config if it exists, as for write_wayfire_config !!!!!
+        xmlet.register_namespace('',"http://openbox.org/3.4/rc")
+        if "/tmp/arandr" in path:
+            inpath = "/usr/share/labwc/rc.xml"
+        else:
+            inpath = path
+        if os.path.isfile(inpath):
+            tree = xmlet.parse(inpath)
+        else:
+            root = xmlet.Element("openbox_config")
+            root.set("xmlns", "http://openbox.org/3.4/rc")
+            tree = xmlet.ElementTree(root)
+        root = tree.getroot()
+        to_remove = []
+        for child in root.iter("{http://openbox.org/3.4/rc}touch"):
+            to_remove.append(child)
+        for rem in to_remove:
+            root.remove(rem)
+        for output_name in self.outputs:
+            output_config = self.configuration.outputs[output_name]
+            if output_config.touchscreen != "":
+                child = xmlet.Element("touch")
+                child.set("deviceName", output_config.touchscreen)
+                child.set("mapToOutput", output_name)
+                root.append(child)
+        tree.write(path, xml_declaration=True, method="xml", encoding='UTF-8')
+
+    def get_touchscreen_setup(self):
+        ts = ""
+        for output_name in self.outputs:
+            output_config = self.configuration.outputs[output_name]
+            ts += output_name + ":" + output_config.touchscreen + ";"
+        return ts
+
 
     #################### sub objects ####################
 

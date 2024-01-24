@@ -55,7 +55,7 @@ class ARandRWidget(Gtk.DrawingArea):
         super(ARandRWidget, self).__init__()
 
         self.command = "xrandr"
-        self.compositor = "none"
+        self.compositor = "openbox"
         if os.environ.get ("WAYLAND_DISPLAY") is not None:
             self.command = "wlr-randr"
             if os.environ.get ("WAYFIRE_CONFIG_FILE") is not None:
@@ -146,153 +146,14 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def revert(self):
         self._xrandr.load_from_string (self.gui.original)
-        if self.command == 'wlr-randr':
-            self.save_wayfire()
-        else:
-            self._xrandr.save_to_x()
-            self.save_dispsetup_sh()
-            self.save_touchscreen()
+        self._xrandr.do_save()
         self.reload()
 
     def save(self):
-        if self.command == 'wlr-randr':
-            if self._xrandr.save_to_shellscript_string () == self.gui.original and not self.gui.tsreboot:
-                return False
-            self.save_wayfire()
-            return True
-        else:
-            written = False
-            newconf = "xrandr " + " ".join(self._xrandr.configuration.commandlineargs())
-            curconf = self.gui.original.split('\n')[1]
-            if newconf != curconf:
-                self._xrandr.save_to_x()
-                written = True
-            self.save_dispsetup_sh()
-            self.save_touchscreen()
+        if self._xrandr.save_to_shellscript_string () == self.gui.original and self._xrandr.get_touchscreen_setup () == self.gui.origts:
+            return False
+        self._xrandr.do_save()
         self.reload()
-        return written
-
-    def save_dispsetup_sh(self):
-        data = self._xrandr.save_to_shellscript_string(None, None)
-        cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
-        file = open ("/tmp/arandr/dispsetup.sh", "w")
-        file.write (SHELLSHEBANG)
-        file.write ("\nif ")
-        file.write (cdata)
-        file.write (" --dryrun ; then \n");
-        file.write (cdata)
-        file.write ("\nfi\n");
-        file.write ("if [ -e /usr/share/tssetup.sh ] ; then\n. /usr/share/tssetup.sh\nfi\n");
-        file.write ("if [ -e /usr/share/ovscsetup.sh ] ; then\n. /usr/share/ovscsetup.sh\nfi\n");
-        file.write ("exit 0");
-        file.close ()
-
-    def save_touchscreen(self):
-        if os.path.isfile ("/tmp/arandr/tssetup.sh"):
-            os.remove ("/tmp/arandr/tssetup.sh")
-        for output_name in self._xrandr.outputs:
-            output_config = self._xrandr.configuration.outputs[output_name]
-            if output_config.touchscreen != "":
-                tscmd = 'xinput --map-to-output "' + output_config.touchscreen + '" ' + output_name
-                subprocess.run (tscmd, shell=True)
-                file = open ("/tmp/arandr/tssetup.sh", "a")
-                file.write ("if xinput | grep -q \"" + output_config.touchscreen + "\" ; then " + tscmd + " ; fi")
-                file.close ()
-
-    def write_wayfire_config(self,path):
-        config = configparser.ConfigParser ()
-        if "greeter.ini" in path:
-            if os.path.exists ("/usr/share/greeter.ini"):
-                config.read ("/usr/share/greeter.ini")
-            else:
-                config.read ("/etc/wayfire/gtemplate.ini")
-        else:
-            config.read (path)
-        tsunused = self._xrandr.touchscreens.copy()
-        for output_name in self._xrandr.outputs:
-            output_config = self._xrandr.configuration.outputs[output_name]
-            section = 'output:' + output_name
-            key = output_config.mode.name.replace(' ','@').replace('.','')
-            config[section] = {}
-            if output_config.active:
-                config[section]['mode'] = key
-                config[section]['position'] = str(int(output_config.position[0])) + ',' + str(int(output_config.position[1]))
-                config[section]['transform'] = output_config.rotation.wayname()
-            else:
-                config[section]['mode'] = "off"
-            if output_config.touchscreen != "":
-                section = "input-device:" + output_config.touchscreen
-                config[section] = {}
-                config[section]["output"] = output_name
-                tsunused.remove (output_config.touchscreen)
-        for tsu in tsunused:
-            section = "input-device:" + tsu
-            config.remove_section (section)
-        with open (path, 'w') as configfile:
-            config.write (configfile)
-
-    def write_labwc_config(self,path):
-        # this overwrites any existing autostart - should append if already there !!!!!
-        command = self._xrandr.save_to_shellscript_string().split('\n')[1]
-        if not os.path.exists (path):
-            outdata = command
-        else:
-            outdata = ''
-            found = False
-            with open (path, "r") as infile:
-                for line in infile:
-                    if line.find ('wlr-randr') != -1:
-                        outdata += command
-                        found = True
-                    else:
-                        outdata += line
-                if found is False:
-                    outdata += command
-        with open (path, "w") as outfile:
-            outfile.write(outdata)
-
-    def write_labwc_touchscreen(self,path):
-        # need to read existing greeter config if it exists, as for write_wayfire_config !!!!!
-        xmlet.register_namespace('',"http://openbox.org/3.4/rc")
-        if os.path.isfile(path):
-            tree = xmlet.parse(path)
-        else:
-            root = xmlet.Element("openbox_config")
-            root.set("xmlns", "http://openbox.org/3.4/rc")
-            tree = xmlet.ElementTree(root)
-        root = tree.getroot()
-        to_remove = []
-        for child in root.iter("{http://openbox.org/3.4/rc}touch"):
-            to_remove.append(child)
-        for rem in to_remove:
-            root.remove(rem)
-        for output_name in self._xrandr.outputs:
-            output_config = self._xrandr.configuration.outputs[output_name]
-            if output_config.touchscreen != "":
-                child = xmlet.Element("touch")
-                child.set("deviceName", output_config.touchscreen)
-                child.set("mapToOutput", output_name)
-                root.append(child)
-        tree.write(path, xml_declaration=True, method="xml", encoding='UTF-8')
-
-    def save_wayfire(self):
-        if self.compositor == "wayfire":
-            path = os.path.expanduser ('~/.config/wayfire.ini')
-            self.write_wayfire_config (path)
-            self.write_wayfire_config ("/tmp/arandr/greeter.ini")
-        else:
-            self._xrandr._run(*self._xrandr.configuration.commandlineargswayfire())
-            path = os.path.expanduser ('~/.config/labwc')
-            if not os.path.isdir (path):
-                os.mkdir (path)
-            path = os.path.expanduser ('~/.config/labwc/autostart')
-            self.write_labwc_config (path)
-            self.write_labwc_config ('/tmp/arandr/autostart')
-            if self.gui.tsreboot:
-                path = os.path.expanduser ('~/.config/labwc/rc.xml')
-                self.write_labwc_touchscreen (path)
-                self.write_labwc_touchscreen ('/tmp/arandr/rc.xml')
-                os.system ("labwc --reconfigure")
         return True
 
     #################### doing changes ####################

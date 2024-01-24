@@ -112,6 +112,7 @@ class Application:
         window.props.title = "Screen Layout Editor"
         window.set_icon_name('computer')
         self.original = None
+        self.originalts = None
         if os.path.isdir ("/tmp/arandr"):
             tmpfiles = glob.glob("/tmp/arandr/*.*")
             for tmpfile in tmpfiles:
@@ -248,7 +249,7 @@ class Application:
 
     def close_app (self, val):
         self.sudo_copy ()
-        if self.widget.command == 'wlr-randr' and self.widget.compositor == 'wayfire'and self.tsreboot and self.rbutt.get_sensitive ():
+        if self.widget.compositor == 'wayfire'and self.tsreboot and self.rbutt.get_sensitive ():
             self.conf = Gtk.MessageDialog (self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.YES_NO, _("Changes to touchscreen will take effect on reboot.\nClick 'Yes' to reboot now, or 'No' to reboot later."))
             self.conf.connect ("response", self.close_resp)
             self.conf.run ()
@@ -259,7 +260,7 @@ class Application:
         ag = self.uimanager.get_action_groups()
         rev = ag[0].get_action ("Revert")
         if rev.get_sensitive () :
-            if self.widget.command == 'wlr-randr' and self.widget.compositor == 'labwc':
+            if self.widget.compositor == 'labwc':
                 os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A mkdir -p /usr/share/labwc/")
                 os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A cp /tmp/arandr/* /usr/share/labwc/")
             else:
@@ -297,11 +298,14 @@ class Application:
             current.load_current_state()
             self.origbak = self.original
             self.original = current.save_to_shellscript_string()
+            self.origtsbak = self.originalts
+            self.origts = current.get_touchscreen_setup()
             if self.widget.save():
                 self.enable_revert (True)
                 self.show_confirm()
             else:
                 self.original = self.origbak
+                self.origts = self.origtsbak
 
         except Exception as exc:  # pylint: disable=broad-except
             dialog = Gtk.MessageDialog(
