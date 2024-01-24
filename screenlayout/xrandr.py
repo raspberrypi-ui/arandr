@@ -312,25 +312,24 @@ class XRandR:
                     # the mode is really new
                     output.modes.append(NamedSize(size, name=name))
             touchscreen = ""
-            if self.command == 'wlr-randr':
-                if self.compositor == "wayfire":
-                    config = configparser.ConfigParser ()
-                    config.read (os.path.expanduser ('~/.config/wayfire.ini'))
-                    for ts in self.touchscreens:
-                        section = "input-device:" + ts
-                        dev = config.get (section, "output", fallback = None)
-                        if dev == output.name:
-                            touchscreen = ts
-                else:
-                    rcpath = os.path.expanduser ('~/.config/labwc/rc.xml')
-                    if os.path.isfile (rcpath):
-                        tree = xmlet.parse(rcpath)
-                        root = tree.getroot()
-                        for child in root.iter("{http://openbox.org/3.4/rc}touch"):
-                            for ts in self.touchscreens:
-                                if child.get('mapToOutput') == output.name:
-                                    touchscreen = ts
-            else:
+            if self.compositor == "wayfire":
+                config = configparser.ConfigParser ()
+                config.read (os.path.expanduser ('~/.config/wayfire.ini'))
+                for ts in self.touchscreens:
+                    section = "input-device:" + ts
+                    dev = config.get (section, "output", fallback = None)
+                    if dev == output.name:
+                        touchscreen = ts
+            elif self.compositor == "labwc":
+                rcpath = os.path.expanduser ('~/.config/labwc/rc.xml')
+                if os.path.isfile (rcpath):
+                    tree = xmlet.parse(rcpath)
+                    root = tree.getroot()
+                    for child in root.iter("{http://openbox.org/3.4/rc}touch"):
+                        for ts in self.touchscreens:
+                            if child.get('mapToOutput') == output.name:
+                                touchscreen = ts
+            elif self.compositor == "openbox":
                 if os.path.isfile ("/usr/share/tssetup.sh"):
                     tsfile = open ("/usr/share/tssetup.sh", "r")
                     for line in tsfile:
@@ -493,7 +492,7 @@ class XRandR:
     def check_configuration(self):
         vmax = self.state.virtual.max
 
-        for output_name in self.outputs:
+        for output_name in self.configuration.outputs:
             output_config = self.configuration.outputs[output_name]
             # output_state = self.state.outputs[output_name]
 
@@ -553,7 +552,7 @@ class XRandR:
         file.write (" --dryrun ; then \n");
         file.write (cdata)
         file.write ("\nfi\n");
-        for output_name in self.outputs:
+        for output_name in self.configuration.outputs:
             output_config = self.configuration.outputs[output_name]
             if output_config.touchscreen != "":
                 tscmd = 'xinput --map-to-output "' + output_config.touchscreen + '" ' + output_name
@@ -573,7 +572,7 @@ class XRandR:
         else:
             config.read (path)
         tsunused = self.touchscreens.copy()
-        for output_name in self.outputs:
+        for output_name in self.configuration.outputs:
             output_config = self.configuration.outputs[output_name]
             section = 'output:' + output_name
             key = output_config.mode.name.replace(' ','@').replace('.','')
@@ -639,7 +638,7 @@ class XRandR:
             to_remove.append(child)
         for rem in to_remove:
             root.remove(rem)
-        for output_name in self.outputs:
+        for output_name in self.configuration.outputs:
             output_config = self.configuration.outputs[output_name]
             if output_config.touchscreen != "":
                 child = xmlet.Element("touch")
@@ -650,13 +649,13 @@ class XRandR:
 
     def get_touchscreen_setup(self):
         ts = ""
-        for output_name in self.outputs:
+        for output_name in self.configuration.outputs:
             output_config = self.configuration.outputs[output_name]
             ts += output_name + ":" + output_config.touchscreen + ","
         return ts
 
     def load_ts_from_string (self, data):
-        for output_name in self.outputs:
+        for output_name in self.configuration.outputs:
             output_config = self.configuration.outputs[output_name]
             output_config.touchscreen = ""
         oplist = data.split(",")
