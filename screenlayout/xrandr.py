@@ -652,9 +652,19 @@ class XRandR:
         ts = ""
         for output_name in self.outputs:
             output_config = self.configuration.outputs[output_name]
-            ts += output_name + ":" + output_config.touchscreen + ";"
+            ts += output_name + ":" + output_config.touchscreen + ","
         return ts
 
+    def load_ts_from_string (self, data):
+        for output_name in self.outputs:
+            output_config = self.configuration.outputs[output_name]
+            output_config.touchscreen = ""
+        oplist = data.split(",")
+        for tsop in oplist:
+            if tsop != "":
+                ts = tsop.split(':')
+                if ts[1] != "":
+                    self.configuration.outputs[ts[0]].touchscreen = ts[1]
 
     #################### sub objects ####################
 

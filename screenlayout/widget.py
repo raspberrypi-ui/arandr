@@ -146,6 +146,7 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def revert(self):
         self._xrandr.load_from_string (self.gui.original)
+        self._xrandr.load_ts_from_string (self.gui.origts)
         self._xrandr.do_save()
         self.reload()
 
