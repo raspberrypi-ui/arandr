@@ -92,27 +92,10 @@ class XRandR:
     #################### loading ####################
 
     def load_from_string(self, data):
-        data = data.replace("%", "%%")
-        lines = data.split("\n")
-        if lines[-1] == '':
-            lines.pop()  # don't create empty last line
-
-        if lines[0] != SHELLSHEBANG:
-            raise FileLoadError('Not a shell script.')
-
-        xrandrlines = [i for i, l in enumerate(
-            lines) if l.strip().startswith(self.command + ' ')]
-        if not xrandrlines:
-            raise FileLoadError('No recognized xrandr command in this shell script.')
-        if len(xrandrlines) > 1:
-            raise FileLoadError('More than one xrandr line in this shell script.')
         if self.command == 'xrandr':
-            self._load_from_commandlineargs(lines[xrandrlines[0]].strip())
+            self._load_from_commandlineargs(data.strip())
         else:
-            self._load_from_commandlineargswlr(lines[xrandrlines[0]].strip())
-        lines[xrandrlines[0]] = '%(xrandr)s'
-
-        return lines
+            self._load_from_commandlineargswlr(data.strip())
 
     def _remap_rotation(self, rotname):
         if rotname.isnumeric():
@@ -326,9 +309,8 @@ class XRandR:
                     tree = xmlet.parse(rcpath)
                     root = tree.getroot()
                     for child in root.iter("{http://openbox.org/3.4/rc}touch"):
-                        for ts in self.touchscreens:
-                            if child.get('mapToOutput') == output.name:
-                                touchscreen = ts
+                        if child.get('mapToOutput') == output.name:
+                            touchscreen = child.get("deviceName")
             elif self.compositor == "openbox":
                 tsfile = None
                 if os.path.isfile ("/tmp/arandr/dispsetup.sh"):
@@ -469,10 +451,10 @@ class XRandR:
     #################### saving ####################
 
     def get_screen_setup(self):
-        if self.command == 'wlr-randr':
-            return "wlr-randr " + " ".join(self.configuration.commandlineargswayfire())
-        else:
+        if self.command == 'xrandr':
             return "xrandr " + " ".join(self.configuration.commandlineargs())
+        else:
+            return "wlr-randr " + " ".join(self.configuration.commandlineargswayfire())
 
     def check_configuration(self):
         vmax = self.state.virtual.max

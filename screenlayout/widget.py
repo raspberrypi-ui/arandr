@@ -146,7 +146,7 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def revert(self):
         ts = False
-        if self.gui.revts == self._xrandr.get_touchscreen_setup():
+        if self.gui.revts != self._xrandr.get_touchscreen_setup():
             ts = True
 
         self._xrandr.load_from_string (self.gui.rev)
