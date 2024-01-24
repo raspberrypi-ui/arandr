@@ -330,10 +330,14 @@ class XRandR:
                             if child.get('mapToOutput') == output.name:
                                 touchscreen = ts
             elif self.compositor == "openbox":
-                if os.path.isfile ("/usr/share/tssetup.sh"):
-                    tsfile = open ("/usr/share/tssetup.sh", "r")
+                tsfile = None
+                if os.path.isfile ("/tmp/arandr/dispsetup.sh"):
+                    tsfile = open ("/tmp/arandr/dispsetup.sh", "r")
+                elif os.path.isfile ("/usr/share/dispsetup.sh"):
+                    tsfile = open ("/usr/share/dispsetup.sh", "r")
+                if tsfile:
                     for line in tsfile:
-                        if output.name in line:
+                        if "xinput" in line and output.name in line:
                             touchscreen = line.split('"')[1]
 
             self.state.outputs[output.name] = output
@@ -464,7 +468,7 @@ class XRandR:
 
     #################### saving ####################
 
-    def save_to_shellscript_string(self, template=None, additional=None):
+    def get_screen_setup(self):
         """
         Return a shellscript that will set the current configuration.
         Output can be parsed by load_from_string.
@@ -472,8 +476,7 @@ class XRandR:
         You may specify a template, which must contain a %(xrandr)s parameter
         and optionally others, which will be filled from the additional dictionary.
         """
-        if not template:
-            template = self.DEFAULTTEMPLATE
+        template = self.DEFAULTTEMPLATE
         template = '\n'.join(template) + '\n'
         if self.command != 'wlr-randr':
             data = {
@@ -483,9 +486,6 @@ class XRandR:
             data = {
                 'xrandr': "wlr-randr " + " ".join(self.configuration.commandlineargswayfire())
             }
-
-        if additional:
-            data.update(additional)
 
         return template % data
 
@@ -543,7 +543,7 @@ class XRandR:
             self._write_wayfire_config ("/tmp/arandr/greeter.ini")
 
     def _write_dispsetup_sh(self):
-        data = self.save_to_shellscript_string(None, None)
+        data = self.get_screen_setup()
         cdata = data.replace (SHELLSHEBANG,'').replace('\n','')
         file = open ("/tmp/arandr/dispsetup.sh", "w")
         file.write (SHELLSHEBANG)
@@ -595,7 +595,7 @@ class XRandR:
             config.write (configfile)
 
     def _write_labwc_config(self,path):
-        command = self.save_to_shellscript_string().split('\n')[1] + " &"
+        command = self.get_screen_setup().split('\n')[1] + " &"
         if "/tmp/arandr" in path:
             inpath = "/usr/share/labwc/autostart"
         else:

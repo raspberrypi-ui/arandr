@@ -156,12 +156,12 @@ class ARandRWidget(Gtk.DrawingArea):
         self.reload()
 
     def save(self):
-        if self.gui.torev == self._xrandr.save_to_shellscript_string() and self.gui.torevts == self._xrandr.get_touchscreen_setup():
+        if self.gui.torev == self._xrandr.get_screen_setup() and self.gui.torevts == self._xrandr.get_touchscreen_setup():
             return False
 
         self.gui.rev = self.gui.torev
         self.gui.revts = self.gui.torevts
-        self.gui.torev = self._xrandr.save_to_shellscript_string()
+        self.gui.torev = self._xrandr.get_screen_setup()
         self.gui.torevts = self._xrandr.get_touchscreen_setup()
 
         self._xrandr.do_save()

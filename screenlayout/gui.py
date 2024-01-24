@@ -167,7 +167,7 @@ class Application:
         )
         self.widget.reload()
 
-        self.torev = self.widget._xrandr.save_to_shellscript_string()
+        self.torev = self.widget._xrandr.get_screen_setup()
         self.torevts = self.widget._xrandr.get_touchscreen_setup()
 
         self.rev = None
