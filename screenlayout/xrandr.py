@@ -190,16 +190,15 @@ class XRandR:
                         raise FileSyntaxError()
                 output.active = True
 
-    def load_current_state(self):  # FIXME -- use a library
+    def load_current_state(self):
         self.configuration = self.Configuration(self)
         self.state = self.State()
 
         if self.command == 'wlr-randr':
-            currentmode, items = self._load_raw_lines_wayfire()
-            self._setup_screen (currentmode)
+            screenline, items = self._read_wlr_randr()
         else:
-            screenline, items = self._load_raw_lines()
-            self._load_parse_screenline(screenline)
+            screenline, items = self._read_xrandr()
+        self._load_parse_screenline(screenline)
 
         for headline, details in items:
             if headline.startswith("  "):
@@ -286,40 +285,44 @@ class XRandR:
                 else:
                     # the mode is really new
                     output.modes.append(NamedSize(size, name=name))
-            touchscreen = ""
-            if self.compositor == "wayfire":
-                config = configparser.ConfigParser ()
-                config.read (os.path.expanduser ('~/.config/wayfire.ini'))
-                for ts in self.touchscreens:
-                    section = "input-device:" + ts
-                    dev = config.get (section, "output", fallback = None)
-                    if dev == output.name:
-                        touchscreen = ts
-            elif self.compositor == "labwc":
-                rcpath = os.path.expanduser ('~/.config/labwc/rc.xml')
-                if os.path.isfile (rcpath):
-                    tree = xmlet.parse(rcpath)
-                    root = tree.getroot()
-                    for child in root.iter("{http://openbox.org/3.4/rc}touch"):
-                        if child.get('mapToOutput') == output.name:
-                            touchscreen = child.get("deviceName")
-            elif self.compositor == "openbox":
-                tsfile = None
-                if os.path.isfile ("/tmp/arandr/dispsetup.sh"):
-                    tsfile = open ("/tmp/arandr/dispsetup.sh", "r")
-                elif os.path.isfile ("/usr/share/dispsetup.sh"):
-                    tsfile = open ("/usr/share/dispsetup.sh", "r")
-                if tsfile:
-                    for line in tsfile:
-                        if "xinput" in line and output.name in line:
-                            touchscreen = line.split('"')[1]
 
+            touchscreen = self._get_device_touchscreen (output.name)
             self.state.outputs[output.name] = output
             self.configuration.outputs[output.name] = self.configuration.OutputConfiguration(
                 active, primary, geometry, current_rotation, currentname, touchscreen
             )
 
-    def _load_raw_lines_wayfire(self):
+    def _get_device_touchscreen(self, output_name):
+        touchscreen = ""
+        if self.compositor == "wayfire":
+            config = configparser.ConfigParser ()
+            config.read (os.path.expanduser ('~/.config/wayfire.ini'))
+            for ts in self.touchscreens:
+                section = "input-device:" + ts
+                dev = config.get (section, "output", fallback = None)
+                if dev == output_name:
+                    touchscreen = ts
+        elif self.compositor == "labwc":
+            rcpath = os.path.expanduser ('~/.config/labwc/rc.xml')
+            if os.path.isfile (rcpath):
+                tree = xmlet.parse(rcpath)
+                root = tree.getroot()
+                for child in root.iter("{http://openbox.org/3.4/rc}touch"):
+                    if child.get('mapToOutput') == output_name:
+                        touchscreen = child.get("deviceName")
+        elif self.compositor == "openbox":
+            tsfile = None
+            if os.path.isfile ("/tmp/arandr/dispsetup.sh"):
+                tsfile = open ("/tmp/arandr/dispsetup.sh", "r")
+            elif os.path.isfile ("/usr/share/dispsetup.sh"):
+                tsfile = open ("/usr/share/dispsetup.sh", "r")
+            if tsfile:
+                for line in tsfile:
+                    if "xinput" in line and output_name in line:
+                        touchscreen = line.split('"')[1]
+        return touchscreen
+
+    def _read_wlr_randr(self):
         output = self._output("")
         items = []
         curw = "0"
@@ -376,24 +379,15 @@ class XRandR:
                 displ[0] = curout + ' connected ()'
             displ.append(modes)
             items.append(displ)
-        current = str(curw) + 'x' + str(curh) + ' ' + str(curf)
-        return current, items
+        # create a dummy screenline just for consistency
+        screenline = "Screen 0: minimum 16 x 16, current " + str(curw) + " x " + str(curh) + ", maximum 32767 x 32767"
+        return screenline, items
 
     def _find_touchscreens(self):
        res = subprocess.run ("libinput list-devices | tr \\\\n @ | sed 's/@@/\\\n/g' | grep \"Capabilities:.*touch\" | sed 's/Device:[ \\\t]*//' | cut -d @ -f 1", shell=True, capture_output=True, encoding='utf8')
        self.touchscreens = res.stdout.splitlines()
 
-    def _setup_screen(self, curmode):
-        self.state.virtual = self.state.Virtual(
-            min_mode=Size((int(320), int(200))),
-            max_mode=Size((int(7680), int(7680)))
-        )
-        res = (curmode.split())[0].split('x')
-        self.configuration.virtual = Size(
-            (int(res[0]), int(res[1]))
-        )
-
-    def _load_raw_lines(self):
+    def _read_xrandr(self):
         output = self._output("--verbose")
         items = []
         screenline = None
@@ -490,9 +484,6 @@ class XRandR:
                         subprocess.run (tscmd, shell=True)
         elif self.compositor == "labwc":
             self._output(*self.configuration.commandlineargswayfire())
-            path = os.path.expanduser ('~/.config/labwc')
-            if not os.path.isdir (path):
-                os.mkdir (path)
             self._write_labwc_config (False)
             self._write_labwc_config (True)
             if ts_changed:
@@ -506,31 +497,27 @@ class XRandR:
     def _write_dispsetup_sh(self):
         data = self.get_screen_setup()
         file = open ("/tmp/arandr/dispsetup.sh", "w")
-        file.write ("#!/bin/sh\nif ")
-        file.write (data)
-        file.write (" --dryrun ; then \n");
-        file.write (data)
-        file.write ("\nfi\n");
+        file.write ("#!/bin/sh\nif " + data + " --dryrun ; then \n" + data + "\nfi\n");
         for output_name in self.configuration.outputs:
             output_config = self.configuration.outputs[output_name]
             if output_config.touchscreen != "":
                 tscmd = 'xinput --map-to-output "' + output_config.touchscreen + '" ' + output_name
                 file.write ("if xinput | grep -q \"" + output_config.touchscreen + "\" ; then " + tscmd + " ; fi\n")
-        file.write ("if [ -e /usr/share/ovscsetup.sh ] ; then\n. /usr/share/ovscsetup.sh\nfi\n");
-        file.write ("exit 0");
+        file.write ("if [ -e /usr/share/ovscsetup.sh ] ; then\n. /usr/share/ovscsetup.sh\nfi\nexit 0");
         file.close ()
 
     def _write_wayfire_config(self, greeter):
-        config = configparser.ConfigParser ()
         if greeter:
-            outpath = "/tmp/arandr/greeter.ini"
             if os.path.exists ("/usr/share/greeter.ini"):
-                config.read ("/usr/share/greeter.ini")
+                inpath = "/usr/share/greeter.ini"
             else:
-                config.read ("/etc/wayfire/gtemplate.ini")
+                inpath = "/etc/wayfire/gtemplate.ini"
+            outpath = "/tmp/arandr/greeter.ini"
         else:
-            outpath = os.path.expanduser ('~/.config/wayfire.ini')
-            config.read (outpath)
+            inpath = outpath = os.path.expanduser ('~/.config/wayfire.ini')
+
+        config = configparser.ConfigParser ()
+        config.read (inpath)
         tsunused = self.touchscreens.copy()
         for output_name in self.configuration.outputs:
             output_config = self.configuration.outputs[output_name]
@@ -555,15 +542,17 @@ class XRandR:
             config.write (configfile)
 
     def _write_labwc_config(self, greeter):
-        command = self.get_screen_setup() + " &"
         if greeter:
             inpath = "/usr/share/labwc/autostart"
             outpath = "/tmp/arandr/autostart"
         else:
             inpath = outpath = os.path.expanduser ('~/.config/labwc/autostart')
-        if not os.path.exists (inpath):
-            outdata = command
-        else:
+            path = os.path.expanduser ('~/.config/labwc')
+            if not os.path.isdir (path):
+                os.mkdir (path)
+
+        command = self.get_screen_setup() + " &"
+        if os.path.isfile (inpath):
             outdata = ''
             found = False
             with open (inpath, "r") as infile:
@@ -577,22 +566,28 @@ class XRandR:
                     if line.strip()[-1] != '&':
                         outdata = outdata.rstrip() + " &\n"
                     outdata += command
+        else:
+            outdata = command
         with open (outpath, "w") as outfile:
             outfile.write(outdata)
 
     def _write_labwc_touchscreen(self, greeter):
-        xmlet.register_namespace('',"http://openbox.org/3.4/rc")
         if greeter:
             inpath = "/usr/share/labwc/rc.xml"
             outpath = '/tmp/arandr/rc.xml'
         else:
             inpath = outpath = os.path.expanduser ('~/.config/labwc/rc.xml')
+            path = os.path.expanduser ('~/.config/labwc')
+            if not os.path.isdir (path):
+                os.mkdir (path)
+
+        xmlet.register_namespace('',"http://openbox.org/3.4/rc")
         if os.path.isfile(inpath):
             tree = xmlet.parse(inpath)
         else:
-            root = xmlet.Element("openbox_config")
-            root.set("xmlns", "http://openbox.org/3.4/rc")
-            tree = xmlet.ElementTree(root)
+            newel = xmlet.Element("openbox_config")
+            newel.set("xmlns", "http://openbox.org/3.4/rc")
+            tree = xmlet.ElementTree(newel)
         root = tree.getroot()
         to_remove = []
         for child in root.iter("{http://openbox.org/3.4/rc}touch"):
