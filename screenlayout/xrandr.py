@@ -29,15 +29,10 @@ from .auxiliary import (
 )
 from .i18n import _
 
-SHELLSHEBANG = '#!/bin/sh'
-
-
 class Feature:
     PRIMARY = 1
 
-
 class XRandR:
-    DEFAULTTEMPLATE = [SHELLSHEBANG, '%(xrandr)s']
 
     configuration = None
     state = None
@@ -85,9 +80,6 @@ class XRandR:
         if err:
             warnings.warn(self.command + " wrote to stderr, but did not report an error (Message was: %r)" % err)
         return ret.decode('utf-8')
-
-    def _run(self, *args):
-        self._output(*args)
 
     #################### loading ####################
 
@@ -489,7 +481,7 @@ class XRandR:
     def do_save(self, ts_changed):
         self.check_configuration()
         if self.compositor == 'openbox':
-            self._run(*self.configuration.commandlineargs())
+            self._output(*self.configuration.commandlineargs())
             self._write_dispsetup_sh()
             if ts_changed:
                 for output_name in self.configuration.outputs:
@@ -497,7 +489,7 @@ class XRandR:
                         tscmd = 'xinput --map-to-output "' + self.configuration.outputs[output_name].touchscreen + '" ' + output_name
                         subprocess.run (tscmd, shell=True)
         elif self.compositor == "labwc":
-            self._run(*self.configuration.commandlineargswayfire())
+            self._output(*self.configuration.commandlineargswayfire())
             path = os.path.expanduser ('~/.config/labwc')
             if not os.path.isdir (path):
                 os.mkdir (path)
@@ -506,7 +498,7 @@ class XRandR:
             if ts_changed:
                 self._write_labwc_touchscreen (False)
                 self._write_labwc_touchscreen (True)
-                os.system ("labwc --reconfigure")
+                subprocess.run ("labwc --reconfigure", shell=True)
         elif self.compositor == "wayfire":
             self._write_wayfire_config (False)
             self._write_wayfire_config (True)
@@ -514,8 +506,7 @@ class XRandR:
     def _write_dispsetup_sh(self):
         data = self.get_screen_setup()
         file = open ("/tmp/arandr/dispsetup.sh", "w")
-        file.write (SHELLSHEBANG)
-        file.write ("\nif ")
+        file.write ("#!/bin/sh\nif ")
         file.write (data)
         file.write (" --dryrun ; then \n");
         file.write (data)

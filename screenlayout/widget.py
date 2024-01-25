@@ -21,10 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 import os
 import stat
-import subprocess
-import shutil
-import configparser
-import xml.etree.ElementTree as xmlet
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -35,8 +31,6 @@ from .snap import Snap
 from .xrandr import XRandR, Feature
 from .auxiliary import Position, NORMAL, ROTATIONS, InadequateConfiguration
 from .i18n import _
-
-SHELLSHEBANG='#!/bin/sh'
 
 class ARandRWidget(Gtk.DrawingArea):
 
@@ -133,7 +127,6 @@ class ARandRWidget(Gtk.DrawingArea):
     def reload(self):
         self._xrandr.load_current_state()
         self._xrandr_was_reloaded()
-        return self._xrandr.DEFAULTTEMPLATE
 
     def _xrandr_was_reloaded(self):
         self.sequence = sorted(self._xrandr.outputs)
@@ -161,10 +154,10 @@ class ARandRWidget(Gtk.DrawingArea):
 
     def save(self):
         ts = False
-        if self.gui.torev == self._xrandr.get_screen_setup() and self.gui.torevts == self._xrandr.get_touchscreen_setup():
-            return False
         if self.gui.torevts != self._xrandr.get_touchscreen_setup():
             ts = True
+        if self.gui.torev == self._xrandr.get_screen_setup() and ts == False:
+            return False
 
         self.gui.rev = self.gui.torev
         self.gui.revts = self.gui.torevts
