@@ -60,6 +60,7 @@ class XRandR:
                 self.features.add(Feature.PRIMARY)
 
         self._find_touchscreens()
+        self._load_current_state()
 
     def _get_outputs(self):
         assert self.state.outputs.keys() == self.configuration.outputs.keys()
@@ -84,6 +85,7 @@ class XRandR:
     #################### loading ####################
 
     def load_from_string(self, data):
+        self._load_current_state()
         if self.command == 'xrandr':
             self._load_from_commandlineargs(data.strip())
         else:
@@ -97,8 +99,6 @@ class XRandR:
         return Rotation(name)
 
     def _load_from_commandlineargs(self, commandline):
-        self.load_current_state()
-
         args = BetterList(commandline.split(" "))
         if args.pop(0) != 'xrandr':
             raise FileSyntaxError()
@@ -152,8 +152,6 @@ class XRandR:
                 output.active = True
 
     def _load_from_commandlineargswlr(self, commandline):
-        self.load_current_state()
-
         args = BetterList(commandline.split(" "))
         if args.pop(0) != 'wlr-randr':
             raise FileSyntaxError()
@@ -190,7 +188,7 @@ class XRandR:
                         raise FileSyntaxError()
                 output.active = True
 
-    def load_current_state(self):
+    def _load_current_state(self):
         self.configuration = self.Configuration(self)
         self.state = self.State()
 
@@ -226,8 +224,6 @@ class XRandR:
 
                 geometry = Geometry(hsplit[2])
 
-                # modeid = hsplit[3].strip("()")
-
                 current_rotation = NORMAL
                 for rotation in ROTATIONS:
                     if hsplit[4] == rotation.lower():
@@ -235,7 +231,6 @@ class XRandR:
             else:
                 active = False
                 geometry = None
-                # modeid = None
                 current_rotation = None
 
             output.rotations = set()
@@ -257,12 +252,11 @@ class XRandR:
                     name = name + ' ' + f
                 else:
                     name = name + f
-                mode_id = _mode_raw.strip("()")
                 try:
                     size = Size([int(w), int(h)])
                 except ValueError:
                     raise Exception(
-                        "Output %s parse error: modename %s modeid %s." % (output.name, name, mode_id)
+                        "Output %s parse error: modename %s." % (output.name, name)
                     )
                 if self.command == 'wlr-randr':
                     if curmode == name:
@@ -445,9 +439,8 @@ class XRandR:
     def check_configuration(self):
         vmax = self.state.virtual.max
 
-        for output_name in self.configuration.outputs:
+        for output_name in self.outputs:
             output_config = self.configuration.outputs[output_name]
-            # output_state = self.state.outputs[output_name]
 
             if not output_config.active:
                 continue
@@ -493,6 +486,7 @@ class XRandR:
         elif self.compositor == "wayfire":
             self._write_wayfire_config (False)
             self._write_wayfire_config (True)
+        self._load_current_state()
 
     def _write_dispsetup_sh(self):
         data = self.get_screen_setup()
@@ -606,14 +600,12 @@ class XRandR:
     def get_touchscreen_setup(self):
         ts = ""
         for output_name in self.configuration.outputs:
-            output_config = self.configuration.outputs[output_name]
-            ts += output_name + ":" + output_config.touchscreen + ","
+            ts += output_name + ":" + self.configuration.outputs[output_name].touchscreen + ","
         return ts
 
     def load_ts_from_string (self, data):
         for output_name in self.configuration.outputs:
-            output_config = self.configuration.outputs[output_name]
-            output_config.touchscreen = ""
+            self.configuration.outputs[output_name].touchscreen = ""
         oplist = data.split(",")
         for tsop in oplist:
             if tsop != "":

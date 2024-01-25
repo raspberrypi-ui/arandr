@@ -73,6 +73,7 @@ class ARandRWidget(Gtk.DrawingArea):
         self.gui = gui
 
         self.connect('draw', self.do_expose_event)
+        self.reload()
 
     #################### widget features ####################
 
@@ -125,10 +126,6 @@ class ARandRWidget(Gtk.DrawingArea):
     #################### loading ####################
 
     def reload(self):
-        self._xrandr.load_current_state()
-        self._xrandr_was_reloaded()
-
-    def _xrandr_was_reloaded(self):
         self.sequence = sorted(self._xrandr.outputs)
         self._lastclick = (-1, -1)
 
@@ -351,11 +348,10 @@ class ARandRWidget(Gtk.DrawingArea):
         if event.button == 3:
             if undermouse:
                 target = [a for a in self.sequence if a in undermouse][-1]
-                menu = self._contextmenu(target)
-                menu.popup(None, None, None, None, event.button, event.time)
+                menu = self.outputmenu(target)
             else:
                 menu = self.contextmenu()
-                menu.popup(None, None, None, None, event.button, event.time)
+            menu.popup_at_pointer(event)
 
         # deposit for drag and drop until better way found to determine exact starting coordinates
         self._lastclick = (event.x, event.y)
@@ -390,7 +386,7 @@ class ARandRWidget(Gtk.DrawingArea):
             output_state = self._xrandr.state.outputs[output_name]
 
             i = Gtk.MenuItem(output_name)
-            i.props.submenu = self._contextmenu(output_name)
+            i.props.submenu = self.outputmenu(output_name)
             menu.add(i)
 
             if not output_config.active and not output_state.connected:
@@ -398,7 +394,7 @@ class ARandRWidget(Gtk.DrawingArea):
         menu.show_all()
         return menu
 
-    def _contextmenu(self, output_name):  # pylint: disable=too-many-locals
+    def outputmenu(self, output_name):  # pylint: disable=too-many-locals
         menu = Gtk.Menu()
         output_config = self._xrandr.configuration.outputs[output_name]
         output_state = self._xrandr.state.outputs[output_name]

@@ -165,11 +165,9 @@ class Application:
             display=randr_display, force_version=force_version,
             window=self.window, gui=self
         )
-        self.widget.reload()
 
         self.torev = self.widget._xrandr.get_screen_setup()
         self.torevts = self.widget._xrandr.get_touchscreen_setup()
-
         self.rev = None
         self.revts = None
 
