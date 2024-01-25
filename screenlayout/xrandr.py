@@ -318,6 +318,8 @@ class XRandR:
 
     def _read_wlr_randr(self):
         output = self._output("")
+        totw = 0
+        toth = 0
         items = []
         curw = "0"
         curh = "0"
@@ -350,6 +352,8 @@ class XRandR:
                         curw = res[0]
                         curh = res[1]
                         curf = strfreq
+                        toth += int(curh)
+                        totw += int(curw)
                 elif len (res) == 2:
                     if res[0] == 'Position:':
                         pos = res[1].split(',')
@@ -374,7 +378,7 @@ class XRandR:
             displ.append(modes)
             items.append(displ)
         # create a dummy screenline just for consistency
-        screenline = "Screen 0: minimum 16 x 16, current " + str(curw) + " x " + str(curh) + ", maximum 32767 x 32767"
+        screenline = "Screen 0: minimum 16 x 16, current " + str(totw) + " x " + str(toth) + ", maximum 32767 x 32767"
         return screenline, items
 
     def _find_touchscreens(self):
