@@ -35,18 +35,24 @@ class XRandR:
 
     configuration = None
     state = None
-    command = 'xrandr'
+    command = "xrandr"
+    compositor = ""
 
-    def __init__(self, display=None, force_version=False, command='xrandr', compositor=''):
+    def __init__(self, display=None, force_version=False):
         """Create proxy object and check for xrandr at `display`. Fail with
         untested versions unless `force_version` is True."""
-        self.command = command
-        self.compositor = compositor
+        if os.environ.get ("WAYLAND_DISPLAY") is not None:
+            self.command = "wlr-randr"
+            if os.environ.get ("WAYFIRE_CONFIG_FILE") is not None:
+                self.compositor = "wayfire"
+            else:
+                self.compositor = "labwc"
+
         self.environ = dict(os.environ)
         if display:
             self.environ['DISPLAY'] = display
 
-        if command == 'xrandr':
+        if self.command == 'xrandr':
             version_output = self._output("--version")
             supported_versions = ["1.2", "1.3", "1.4", "1.5"]
             if not any(x in version_output for x in supported_versions) and not force_version:
@@ -54,7 +60,7 @@ class XRandR:
                             "/".join(supported_versions))
 
         self.features = set()
-        if command == 'xrandr':
+        if self.command == 'xrandr':
             if " 1.2" not in version_output:
                 self.features.add(Feature.PRIMARY)
 
@@ -76,9 +82,9 @@ class XRandR:
         ret, err = proc.communicate()
         status = proc.wait()
         if status != 0:
-            raise Exception(self.command + " returned error code %d: %s" % (status, err))
+            raise Exception(command + " returned error code %d: %s" % (status, err))
         if err:
-            warnings.warn(self.command + " wrote to stderr, but did not report an error (Message was: %r)" % err)
+            warnings.warn(command + " wrote to stderr, but did not report an error (Message was: %r)" % err)
         return ret.decode('utf-8')
 
     #################### loading ####################
@@ -98,13 +104,6 @@ class XRandR:
                 ts = tsop.split(':')
                 if ts[1] != "":
                     self.state.outputs[ts[0]].touchscreen = ts[1]
-
-    def _remap_rotation(self, rotname):
-        if rotname.isnumeric():
-            name = ('Left', 'Inverted', 'Right')[int(int(rotname) / 90 - 1)]
-        else:
-            name = rotname.capitalize()
-        return Rotation(name)
 
     def _load_from_commandlineargs(self, commandline):
         args = BetterList(commandline.split(" "))
@@ -159,42 +158,6 @@ class XRandR:
                         raise FileSyntaxError()
                 output.active = True
 
-    def _load_from_commandlineargswlr(self, commandline):
-        args = BetterList(commandline.split(" "))
-        if args.pop(0) != 'wlr-randr':
-            raise FileSyntaxError()
-        # first part is empty, exclude empty parts
-        options = dict((a[0], a[1:]) for a in args.split('--output') if a)
-
-        for output_name, output_argument in options.items():
-            output = self.configuration.outputs[output_name]
-            output_state = self.state.outputs[output_name]
-            output.primary = False
-            if output_argument == ['--off']:
-                output.active = False
-            else:
-                if len(output_argument) % 2 != 0:
-                    raise FileSyntaxError()
-                parts = [
-                    (output_argument[2 * i], output_argument[2 * i + 1])
-                    for i in range(len(output_argument) // 2)
-                ]
-                for part in parts:
-                    if part[0] == '--mode':
-                        mode = part[1].replace('@',' ')
-                        for namedmode in output_state.modes:
-                            if namedmode.name == mode:
-                                output.mode = namedmode
-                                break
-                        else:
-                            raise FileLoadError("Not a known mode: %s" % (part[1]))
-                    elif part[0] == '--pos':
-                        output.position = Position(part[1].replace(',','x'))
-                    elif part[0] == '--transform':
-                        output.rotation = self._remap_rotation(part[1])
-                    else:
-                        raise FileSyntaxError()
-                output.active = True
 
     def _load_current_state(self):
         self.configuration = self.Configuration(self)
@@ -294,109 +257,6 @@ class XRandR:
                 active, primary, geometry, current_rotation, currentname
             )
 
-    def _get_device_touchscreen(self, output_name):
-        touchscreen = ""
-        if self.compositor == "wayfire":
-            config = configparser.ConfigParser ()
-            config.read (os.path.expanduser ('~/.config/wayfire.ini'))
-            for ts in self.touchscreens:
-                section = "input-device:" + ts
-                dev = config.get (section, "output", fallback = None)
-                if dev == output_name:
-                    touchscreen = ts
-        elif self.compositor == "labwc":
-            rcpath = os.path.expanduser ('~/.config/labwc/rc.xml')
-            if os.path.isfile (rcpath):
-                tree = xmlet.parse(rcpath)
-                root = tree.getroot()
-                for child in root.iter("{http://openbox.org/3.4/rc}touch"):
-                    if child.get('mapToOutput') == output_name:
-                        touchscreen = child.get("deviceName")
-        elif self.compositor == "openbox":
-            tsfile = None
-            if os.path.isfile ("/tmp/arandr/dispsetup.sh"):
-                tsfile = open ("/tmp/arandr/dispsetup.sh", "r")
-            elif os.path.isfile ("/usr/share/dispsetup.sh"):
-                tsfile = open ("/usr/share/dispsetup.sh", "r")
-            if tsfile:
-                for line in tsfile:
-                    if "xinput" in line and output_name in line:
-                        touchscreen = line.split('"')[1]
-        return touchscreen
-
-    def _read_wlr_randr(self):
-        output = self._output("")
-        totw = 0
-        toth = 0
-        items = []
-        curw = "0"
-        curh = "0"
-        curf = "0"
-        act = False
-        towrite = False
-        for line in output.split('\n'):
-            if len (line) > 0 and not line.startswith(' '):
-                if towrite:
-                    if act:
-                        displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
-                    else:
-                        displ[0] = curout + ' connected ()'
-                    displ.append(modes)
-                    items.append(displ)
-                towrite = True
-                curout = (line.split())[0]
-                displ = []
-                displ.append (line)
-                modes = []
-            else:
-                res = line.replace (" px, ", " ").replace( "x", " ").split()
-                if 'px' in line :
-                    modes.append ([line.strip().split()])
-                    modes[-1].append (res[0])
-                    modes[-1].append (res[1])
-                    strfreq = "%.3f" % float(res[2])
-                    modes[-1].append (strfreq)
-                    if 'current' in line:
-                        curw = res[0]
-                        curh = res[1]
-                        curf = strfreq
-                        toth += int(curh)
-                        totw += int(curw)
-                elif len (res) == 2:
-                    if res[0] == 'Position:':
-                        pos = res[1].split(',')
-                        curx = pos[0]
-                        cury = pos[1]
-                    elif res[0] == 'Transform:':
-                        curt = self._remap_rotation (res[1]).lower()
-                        if curt == "left" or curt == "right":
-                            tmp = curw
-                            curw = curh
-                            curh = tmp
-                    elif res[0] == 'Enabled:':
-                        if res[1] == "no" :
-                            act = False
-                        else:
-                            act = True
-        if towrite:
-            if act:
-                displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
-            else:
-                displ[0] = curout + ' connected ()'
-            displ.append(modes)
-            items.append(displ)
-        # create a dummy screenline just for consistency
-        if totw > 32767:
-            totw = 32767
-        if toth > 32767:
-            toth = 32767
-        screenline = "Screen 0: minimum 16 x 16, current " + str(totw) + " x " + str(toth) + ", maximum 32767 x 32767"
-        return screenline, items
-
-    def _find_touchscreens(self):
-       res = subprocess.run ("libinput list-devices | tr \\\\n @ | sed 's/@@/\\\n/g' | grep \"Capabilities:.*touch\" | sed 's/Device:[ \\\t]*//' | cut -d @ -f 1", shell=True, capture_output=True, encoding='utf8')
-       self.touchscreens = res.stdout.splitlines()
-
     def _read_xrandr(self):
         output = self._output("--verbose")
         items = []
@@ -484,6 +344,8 @@ class XRandR:
             if output_config.position[0] < 0 or output_config.position[1] < 0:
                 raise InadequateConfiguration(
                     _("An output is outside the virtual screen."))
+
+    #################### multi-format save functions ####################
 
     def save_config(self, ts_changed):
         self.check_configuration()
@@ -617,6 +479,157 @@ class XRandR:
                 child.set("mapToOutput", output_name)
                 root.append(child)
         tree.write(outpath, xml_declaration=True, method="xml", encoding='UTF-8')
+
+    #################### touchscreen mapping ####################
+
+    def _find_touchscreens(self):
+       res = subprocess.run ("libinput list-devices | tr \\\\n @ | sed 's/@@/\\\n/g' | grep \"Capabilities:.*touch\" | sed 's/Device:[ \\\t]*//' | cut -d @ -f 1", shell=True, capture_output=True, encoding='utf8')
+       self.touchscreens = res.stdout.splitlines()
+
+    def _get_device_touchscreen(self, output_name):
+        touchscreen = ""
+        if self.compositor == "wayfire":
+            config = configparser.ConfigParser ()
+            config.read (os.path.expanduser ('~/.config/wayfire.ini'))
+            for ts in self.touchscreens:
+                section = "input-device:" + ts
+                dev = config.get (section, "output", fallback = None)
+                if dev == output_name:
+                    touchscreen = ts
+        elif self.compositor == "labwc":
+            rcpath = os.path.expanduser ('~/.config/labwc/rc.xml')
+            if os.path.isfile (rcpath):
+                tree = xmlet.parse(rcpath)
+                root = tree.getroot()
+                for child in root.iter("{http://openbox.org/3.4/rc}touch"):
+                    if child.get('mapToOutput') == output_name:
+                        touchscreen = child.get("deviceName")
+        elif self.compositor == "openbox":
+            tsfile = None
+            if os.path.isfile ("/tmp/arandr/dispsetup.sh"):
+                tsfile = open ("/tmp/arandr/dispsetup.sh", "r")
+            elif os.path.isfile ("/usr/share/dispsetup.sh"):
+                tsfile = open ("/usr/share/dispsetup.sh", "r")
+            if tsfile:
+                for line in tsfile:
+                    if "xinput" in line and output_name in line:
+                        touchscreen = line.split('"')[1]
+        return touchscreen
+
+    #################### loading from wlr-randr ####################
+
+    def _read_wlr_randr(self):
+        output = self._output("")
+        totw = 0
+        toth = 0
+        items = []
+        curw = "0"
+        curh = "0"
+        curf = "0"
+        act = False
+        towrite = False
+        for line in output.split('\n'):
+            if len (line) > 0 and not line.startswith(' '):
+                if towrite:
+                    if act:
+                        displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
+                    else:
+                        displ[0] = curout + ' connected ()'
+                    displ.append(modes)
+                    items.append(displ)
+                towrite = True
+                curout = (line.split())[0]
+                displ = []
+                displ.append (line)
+                modes = []
+            else:
+                res = line.replace (" px, ", " ").replace( "x", " ").split()
+                if 'px' in line :
+                    modes.append ([line.strip().split()])
+                    modes[-1].append (res[0])
+                    modes[-1].append (res[1])
+                    strfreq = "%.3f" % float(res[2])
+                    modes[-1].append (strfreq)
+                    if 'current' in line:
+                        curw = res[0]
+                        curh = res[1]
+                        curf = strfreq
+                        toth += int(curh)
+                        totw += int(curw)
+                elif len (res) == 2:
+                    if res[0] == 'Position:':
+                        pos = res[1].split(',')
+                        curx = pos[0]
+                        cury = pos[1]
+                    elif res[0] == 'Transform:':
+                        curt = self._remap_rotation (res[1]).lower()
+                        if curt == "left" or curt == "right":
+                            tmp = curw
+                            curw = curh
+                            curh = tmp
+                    elif res[0] == 'Enabled:':
+                        if res[1] == "no" :
+                            act = False
+                        else:
+                            act = True
+        if towrite:
+            if act:
+                displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
+            else:
+                displ[0] = curout + ' connected ()'
+            displ.append(modes)
+            items.append(displ)
+        # create a dummy screenline just for consistency
+        if totw > 32767:
+            totw = 32767
+        if toth > 32767:
+            toth = 32767
+        screenline = "Screen 0: minimum 16 x 16, current " + str(totw) + " x " + str(toth) + ", maximum 32767 x 32767"
+        return screenline, items
+
+    def _load_from_commandlineargswlr(self, commandline):
+        args = BetterList(commandline.split(" "))
+        if args.pop(0) != 'wlr-randr':
+            raise FileSyntaxError()
+        # first part is empty, exclude empty parts
+        options = dict((a[0], a[1:]) for a in args.split('--output') if a)
+
+        for output_name, output_argument in options.items():
+            output = self.configuration.outputs[output_name]
+            output_state = self.state.outputs[output_name]
+            output.primary = False
+            if output_argument == ['--off']:
+                output.active = False
+            else:
+                if len(output_argument) % 2 != 0:
+                    raise FileSyntaxError()
+                parts = [
+                    (output_argument[2 * i], output_argument[2 * i + 1])
+                    for i in range(len(output_argument) // 2)
+                ]
+                for part in parts:
+                    if part[0] == '--mode':
+                        mode = part[1].replace('@',' ')
+                        for namedmode in output_state.modes:
+                            if namedmode.name == mode:
+                                output.mode = namedmode
+                                break
+                        else:
+                            raise FileLoadError("Not a known mode: %s" % (part[1]))
+                    elif part[0] == '--pos':
+                        output.position = Position(part[1].replace(',','x'))
+                    elif part[0] == '--transform':
+                        output.rotation = self._remap_rotation(part[1])
+                    else:
+                        raise FileSyntaxError()
+                output.active = True
+
+    def _remap_rotation(self, rotname):
+        if rotname.isnumeric():
+            name = ('Left', 'Inverted', 'Right')[int(int(rotname) / 90 - 1)]
+        else:
+            name = rotname.capitalize()
+        return Rotation(name)
 
     #################### sub objects ####################
 

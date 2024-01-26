@@ -108,7 +108,6 @@ class Application:
 
     def __init__(self, file=None, randr_display=None, force_version=False):
         self.window = window = Gtk.Window()
-        self.tsreboot = False
         window.props.title = "Screen Layout Editor"
         window.set_icon_name('computer')
         if os.path.isdir ("/tmp/arandr"):
@@ -163,12 +162,8 @@ class Application:
         # widget
         self.widget = widget.ARandRWidget(
             display=randr_display, force_version=force_version,
-            window=self.window, gui=self
+            window=self.window
         )
-
-        self.torev, self.torevts = self.widget._xrandr.get_config_strings()
-        self.rev = None
-        self.revts = None
 
         self.widget.connect('changed', self._widget_changed)
         self._widget_changed(self.widget)
@@ -250,7 +245,7 @@ class Application:
 
     def close_app (self, val):
         self.sudo_copy ()
-        if self.widget.compositor == 'wayfire'and self.tsreboot and self.rbutt.get_sensitive ():
+        if self.widget._xrandr.compositor == 'wayfire'and self.widget.tsreboot and self.rbutt.get_sensitive ():
             self.conf = Gtk.MessageDialog (self.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.YES_NO, _("Changes to touchscreen will take effect on reboot.\nClick 'Yes' to reboot now, or 'No' to reboot later."))
             self.conf.connect ("response", self.close_resp)
             self.conf.run ()
@@ -261,7 +256,7 @@ class Application:
         ag = self.uimanager.get_action_groups()
         rev = ag[0].get_action ("Revert")
         if rev.get_sensitive () :
-            if self.widget.compositor == 'labwc':
+            if self.widget._xrandr.compositor == 'labwc':
                 os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A mkdir -p /usr/share/labwc/")
                 os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A cp /tmp/arandr/* /usr/share/labwc/")
             else:
@@ -309,8 +304,6 @@ class Application:
 
     @actioncallback
     def do_revert(self):
-        if self.rev == None:
-            return
         if self.widget.abort_if_unsafe():
             return
 

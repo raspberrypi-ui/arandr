@@ -32,6 +32,7 @@ from .xrandr import XRandR, Feature
 from .auxiliary import Position, NORMAL, ROTATIONS, InadequateConfiguration
 from .i18n import _
 
+
 class ARandRWidget(Gtk.DrawingArea):
 
     sequence = None
@@ -45,17 +46,8 @@ class ARandRWidget(Gtk.DrawingArea):
         'changed': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
     }
 
-    def __init__(self, window, factor=8, display=None, force_version=False, gui=None):
+    def __init__(self, window, factor=8, display=None, force_version=False):
         super(ARandRWidget, self).__init__()
-
-        self.command = "xrandr"
-        self.compositor = "openbox"
-        if os.environ.get ("WAYLAND_DISPLAY") is not None:
-            self.command = "wlr-randr"
-            if os.environ.get ("WAYFIRE_CONFIG_FILE") is not None:
-                self.compositor = "wayfire"
-            else:
-                self.compositor = "labwc"
 
         self.window = window
         self._factor = factor
@@ -69,11 +61,16 @@ class ARandRWidget(Gtk.DrawingArea):
 
         self.setup_draganddrop()
 
-        self._xrandr = XRandR(display=display, force_version=force_version, command=self.command, compositor=self.compositor)
-        self.gui = gui
+        self._xrandr = XRandR(display=display, force_version=force_version)
 
         self.connect('draw', self.do_expose_event)
         self.reload()
+
+        self.torev, self.torevts = self._xrandr.get_config_strings()
+        self.rev = None
+        self.revts = None
+        self.tsreboot = False
+
 
     #################### widget features ####################
 
@@ -135,16 +132,18 @@ class ARandRWidget(Gtk.DrawingArea):
         self.emit('changed')
 
     def revert(self):
+        if self.rev == None or self.revts == None:
+            return
         confstr, tsstr = self._xrandr.get_config_strings()
         ts = False
-        if self.gui.revts != tsstr:
+        if self.revts != tsstr:
             ts = True
 
-        self._xrandr.load_from_strings (self.gui.rev, self.gui.revts)
-        self.gui.torev = self.gui.rev
-        self.gui.torevts = self.gui.revts
-        self.gui.rev = None
-        self.gui.revts = None
+        self._xrandr.load_from_strings (self.rev, self.revts)
+        self.torev = self.rev
+        self.torevts = self.revts
+        self.rev = None
+        self.revts = None
 
         self._xrandr.save_config(ts)
         self.reload()
@@ -152,15 +151,15 @@ class ARandRWidget(Gtk.DrawingArea):
     def save(self):
         confstr, tsstr = self._xrandr.get_config_strings()
         ts = False
-        if self.gui.torevts != tsstr:
+        if self.torevts != tsstr:
             ts = True
-        if self.gui.torev == confstr and ts == False:
+        if self.torev == confstr and ts == False:
             return False
 
-        self.gui.rev = self.gui.torev
-        self.gui.revts = self.gui.torevts
-        self.gui.torev = confstr
-        self.gui.torevts = tsstr
+        self.rev = self.torev
+        self.revts = self.torevts
+        self.torev = confstr
+        self.torevts = tsstr
 
         self._xrandr.save_config(ts)
         self.reload()
@@ -420,28 +419,32 @@ class ARandRWidget(Gtk.DrawingArea):
                 cur = output_config.mode.name.split()
             res_m = Gtk.Menu()
             inmenu = []
-            if self.command == 'wlr-randr':
+            if self._xrandr.command == 'wlr-randr':
                 modlist = reversed (output_state.modes)
             else:
                 modlist = output_state.modes
             for mode in modlist:
                 ms = mode.name.split()
-                if not ms[0] in inmenu:
-                    inmenu.append(ms[0])
-                    i = Gtk.CheckMenuItem(str(ms[0]))
-                    i.props.draw_as_radio = True
-                    i.props.active = (cur[0] == ms[0])
-                    def _res_set(menuitem, on, mode):
-                        try:
-                            self.set_resolution(on, mode)
-                        except InadequateConfiguration as e:
-                            self.error_message(_("Setting this resolution is not possible here: %s")%e.message)
-                    i.connect('activate', _res_set, output_name, mode)
-                    res_m.add(i)
+                if ms[0] in inmenu:
+                    continue
+                inmenu.append(ms[0])
+                i = Gtk.CheckMenuItem(str(ms[0]))
+                i.props.draw_as_radio = True
+                i.props.active = (cur[0] == ms[0])
+
+                def _res_set(_menuitem, output_name, mode):
+                    try:
+                        self.set_resolution(output_name, mode)
+                    except InadequateConfiguration as exc:
+                        self.error_message(
+                            _("Setting this resolution is not possible here: %s") % exc
+                        )
+                i.connect('activate', _res_set, output_name, mode)
+                res_m.add(i)
 
             ref_m = Gtk.Menu()
-            for r in output_state.modes:
-                ms = r.name.split()
+            for mode in output_state.modes:
+                ms = mode.name.split()
                 if cur[0] == ms[0]:
                     if ("Hz" in str(ms[1])) :
                         i = Gtk.CheckMenuItem(str(ms[1]))
@@ -449,12 +452,15 @@ class ARandRWidget(Gtk.DrawingArea):
                         i = Gtk.CheckMenuItem(str(ms[1]) +"Hz")
                     i.props.draw_as_radio = True
                     i.props.active = (cur[1] == ms[1])
-                    def _ref_set(menuitem, on, r):
+
+                    def _freq_set(_menuitem, output_name, freq):
                         try:
-                            self.set_resolution(on, r)
-                        except InadequateConfiguration as e:
-                            self.error_message(_("Setting this resolution is not possible here: %s")%e.message)
-                    i.connect('activate', _ref_set, output_name, r)
+                            self.set_resolution(output_name, freq)
+                        except InadequateConfiguration as exc:
+                            self.error_message(
+                                _("Setting this frequency is not possible here: %s") % exc
+                            )
+                    i.connect('activate', _freq_set, output_name, mode)
                     ref_m.add(i)
 
             or_m = Gtk.Menu()
@@ -486,7 +492,7 @@ class ARandRWidget(Gtk.DrawingArea):
                             if out.touchscreen == ts:
                                 out.touchscreen = ""
                         self.set_touchscreen(output_name, ts)
-                        self.gui.tsreboot = True
+                        self.tsreboot = True
                 i.connect('activate', _ts_set, output_name, ts)
                 ts_m.add(i)
 
@@ -586,10 +592,10 @@ class ARandRWidget(Gtk.DrawingArea):
                 self._xrandr.configuration.outputs[self._draggingoutput].tentative_position
             )
         except InadequateConfiguration:
-            context.finish(False, False, 0)
+            context.finish(False, False, time)
             # raise # snapping back to the original position should be enought feedback
 
-        context.finish(True, False, 0)
+        context.finish(True, False, time)
 
     def _dragend_cb(self, widget, context):
         if not self._draggingoutput:
