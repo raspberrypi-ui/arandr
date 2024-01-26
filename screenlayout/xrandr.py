@@ -21,7 +21,6 @@ import subprocess
 import warnings
 import configparser
 import xml.etree.ElementTree as xmlet
-from functools import reduce
 
 from .auxiliary import (
     BetterList, Size, Position, Geometry, FileLoadError, FileSyntaxError,
@@ -91,14 +90,14 @@ class XRandR:
         else:
             self._load_from_commandlineargswlr(confdata.strip())
 
-        for output_name in self.configuration.outputs:
-            self.configuration.outputs[output_name].touchscreen = ""
+        for output_name in self.outputs:
+            self.state.outputs[output_name].touchscreen = ""
         oplist = tsdata.split(",")
         for tsop in oplist:
             if tsop != "":
                 ts = tsop.split(':')
                 if ts[1] != "":
-                    self.configuration.outputs[ts[0]].touchscreen = ts[1]
+                    self.state.outputs[ts[0]].touchscreen = ts[1]
 
     def _remap_rotation(self, rotname):
         if rotname.isnumeric():
@@ -289,10 +288,10 @@ class XRandR:
                     # the mode is really new
                     output.modes.append(NamedSize(size, name=name))
 
-            touchscreen = self._get_device_touchscreen (output.name)
+            output.touchscreen = self._get_device_touchscreen (output.name)
             self.state.outputs[output.name] = output
             self.configuration.outputs[output.name] = self.configuration.OutputConfiguration(
-                active, primary, geometry, current_rotation, currentname, touchscreen
+                active, primary, geometry, current_rotation, currentname
             )
 
     def _get_device_touchscreen(self, output_name):
@@ -449,8 +448,8 @@ class XRandR:
 
     def get_config_strings(self):
         ts = ""
-        for output_name in self.configuration.outputs:
-            ts += output_name + ":" + self.configuration.outputs[output_name].touchscreen + ","
+        for output_name in self.outputs:
+            ts += output_name + ":" + self.state.outputs[output_name].touchscreen + ","
 
         if self.command == 'xrandr':
             return "xrandr " + " ".join(self.configuration.commandlineargs()), ts
@@ -492,9 +491,9 @@ class XRandR:
             self._output(*self.configuration.commandlineargs())
             self._write_dispsetup_sh()
             if ts_changed:
-                for output_name in self.configuration.outputs:
-                    if self.configuration.outputs[output_name].touchscreen != "":
-                        tscmd = 'xinput --map-to-output "' + self.configuration.outputs[output_name].touchscreen + '" ' + output_name
+                for output_name in self.outputs:
+                    if self.state.outputs[output_name].touchscreen != "":
+                        tscmd = 'xinput --map-to-output "' + self.state.outputs[output_name].touchscreen + '" ' + output_name
                         subprocess.run (tscmd, shell=True)
         elif self.compositor == "labwc":
             self._output(*self.configuration.commandlineargswayfire())
@@ -513,11 +512,11 @@ class XRandR:
         data = "xrandr " + " ".join(self.configuration.commandlineargs())
         file = open ("/tmp/arandr/dispsetup.sh", "w")
         file.write ("#!/bin/sh\nif " + data + " --dryrun ; then \n" + data + "\nfi\n");
-        for output_name in self.configuration.outputs:
-            output_config = self.configuration.outputs[output_name]
-            if output_config.touchscreen != "":
-                tscmd = 'xinput --map-to-output "' + output_config.touchscreen + '" ' + output_name
-                file.write ("if xinput | grep -q \"" + output_config.touchscreen + "\" ; then " + tscmd + " ; fi\n")
+        for output_name in self.outputs:
+            output_state = self.state.outputs[output_name]
+            if output_state.touchscreen != "":
+                tscmd = 'xinput --map-to-output "' + output_state.touchscreen + '" ' + output_name
+                file.write ("if xinput | grep -q \"" + output_state.touchscreen + "\" ; then " + tscmd + " ; fi\n")
         file.write ("if [ -e /usr/share/ovscsetup.sh ] ; then\n. /usr/share/ovscsetup.sh\nfi\nexit 0");
         file.close ()
 
@@ -534,8 +533,9 @@ class XRandR:
         config = configparser.ConfigParser ()
         config.read (inpath)
         tsunused = self.touchscreens.copy()
-        for output_name in self.configuration.outputs:
+        for output_name in self.outputs:
             output_config = self.configuration.outputs[output_name]
+            output_state = self.state.outputs[output_name]
             section = 'output:' + output_name
             key = output_config.mode.name.replace(' ','@').replace('.','')
             config[section] = {}
@@ -545,11 +545,11 @@ class XRandR:
                 config[section]['transform'] = output_config.rotation.wayname()
             else:
                 config[section]['mode'] = "off"
-            if output_config.touchscreen != "":
-                section = "input-device:" + output_config.touchscreen
+            if output_state.touchscreen != "":
+                section = "input-device:" + output_state.touchscreen
                 config[section] = {}
                 config[section]["output"] = output_name
-                tsunused.remove (output_config.touchscreen)
+                tsunused.remove (output_state.touchscreen)
         for tsu in tsunused:
             section = "input-device:" + tsu
             config.remove_section (section)
@@ -609,11 +609,11 @@ class XRandR:
             to_remove.append(child)
         for rem in to_remove:
             root.remove(rem)
-        for output_name in self.configuration.outputs:
-            output_config = self.configuration.outputs[output_name]
-            if output_config.touchscreen != "":
+        for output_name in self.outputs:
+            output_state = self.state.outputs[output_name]
+            if output_state.touchscreen != "":
                 child = xmlet.Element("touch")
-                child.set("deviceName", output_config.touchscreen)
+                child.set("deviceName", output_state.touchscreen)
                 child.set("mapToOutput", output_name)
                 root.append(child)
         tree.write(outpath, xml_declaration=True, method="xml", encoding='UTF-8')
@@ -642,6 +642,7 @@ class XRandR:
         class Output:
             rotations = None
             connected = None
+            touchscreen = None
 
             def __init__(self, name):
                 self.name = name
@@ -717,10 +718,9 @@ class XRandR:
 
         class OutputConfiguration:
 
-            def __init__(self, active, primary, geometry, rotation, modename, touchscreen):
+            def __init__(self, active, primary, geometry, rotation, modename):
                 self.active = active
                 self.primary = primary
-                self.touchscreen = touchscreen
                 if active:
                     self.position = geometry.position
                     self.rotation = rotation

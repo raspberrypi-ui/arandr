@@ -186,9 +186,6 @@ class ARandRWidget(Gtk.DrawingArea):
     def set_rotation(self, output_name, rot):
         self._set_something('rotation', output_name, rot)
 
-    def set_touchscreen(self, output_name, ts):
-        self._set_something('touchscreen', output_name, ts)
-
     def set_resolution(self, output_name, res):
         self._set_something('mode', output_name, res)
 
@@ -235,6 +232,10 @@ class ARandRWidget(Gtk.DrawingArea):
 
         self._force_repaint()
         self.emit('changed')
+
+    def set_touchscreen(self, output_name, ts):
+        setattr(self._xrandr.state.outputs[output_name], 'touchscreen', ts)
+
 
     #################### painting ####################
 
@@ -478,10 +479,10 @@ class ARandRWidget(Gtk.DrawingArea):
             for ts in self._xrandr.touchscreens:
                 i = Gtk.CheckMenuItem(ts)
                 i.props.draw_as_radio = True
-                i.props.active = (output_config.touchscreen == ts)
+                i.props.active = (output_state.touchscreen == ts)
                 def _ts_set(_menuitem, output_name, ts):
-                    if output_config.touchscreen != ts:
-                        for out in self._xrandr.configuration.outputs.values():
+                    if output_state.touchscreen != ts:
+                        for out in self._xrandr.state.outputs.values():
                             if out.touchscreen == ts:
                                 out.touchscreen = ""
                         self.set_touchscreen(output_name, ts)
@@ -495,15 +496,14 @@ class ARandRWidget(Gtk.DrawingArea):
             ref_i.props.submenu = ref_m
             or_i = Gtk.MenuItem(_("Orientation"))
             or_i.props.submenu = or_m
-            if len(self._xrandr.touchscreens) > 0:
-                ts_i = Gtk.MenuItem(_("Touchscreen"))
-                ts_i.props.submenu = ts_m
 
             if len (output_state.modes):
                 menu.add(res_i)
                 menu.add(ref_i)
                 menu.add(or_i)
                 if len(self._xrandr.touchscreens) > 0:
+                    ts_i = Gtk.MenuItem(_("Touchscreen"))
+                    ts_i.props.submenu = ts_m
                     menu.add(ts_i)
 
         menu.show_all()
@@ -592,6 +592,9 @@ class ARandRWidget(Gtk.DrawingArea):
         context.finish(True, False, 0)
 
     def _dragend_cb(self, widget, context):
+        if not self._draggingoutput:
+            return
+
         try:
             self.set_position(
                 self._draggingoutput,
