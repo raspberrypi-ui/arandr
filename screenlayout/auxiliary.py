@@ -134,33 +134,39 @@ class Geometry(tuple):
 class Rotation(str):
     """String that represents a rotation by a multiple of 90 degree"""
 
-    def __init__(self, _original_me):
-        super().__init__()
-        if self not in ('Left', 'Right', 'Normal', 'Inverted'):
+    def __new__(self, string):
+        if string not in ('left', 'right', 'normal', 'inverted', '90', '180', '270'):
             raise Exception("Unknown rotation.")
-    is_odd = property(lambda self: self in ('Left', 'Right'))
-    _angles = {'Left': pi / 2, 'Inverted': pi, 'Right': 3 * pi / 2, 'Normal': 0}
+        if string == "left" or string == "90":
+            instance = super().__new__(self, "left")
+        if string == "right" or string == "270":
+            instance = super().__new__(self, "right")
+        if string == "inverted" or string == "180":
+            instance = super().__new__(self, "inverted")
+        if string == "normal":
+            instance = super().__new__(self, "normal")
+        return instance
+
+    is_odd = property(lambda self: self in ('left', 'right'))
+    _angles = {'left': pi / 2, 'inverted': pi, 'right': 3 * pi / 2, 'normal': 0}
     angle = property(lambda self: Rotation._angles[self])
 
     def __repr__(self):
         return '<Rotation %s>' % self
 
-    def xname(self):
-        return self.lower()
-
     def wayname(self):
-        if self == 'Normal':
-            return 'normal'
-        elif self == 'Left':
+        if self == 'left':
             return '90'
-        elif self == 'Inverted':
+        elif self == 'inverted':
             return '180'
-        elif self == 'Right':
+        elif self == 'right':
             return '270'
+        else:
+            return self
 
 
-LEFT = Rotation('Left')
-RIGHT = Rotation('Right')
-INVERTED = Rotation('Inverted')
-NORMAL = Rotation('Normal')
+LEFT = Rotation('left')
+RIGHT = Rotation('right')
+INVERTED = Rotation('inverted')
+NORMAL = Rotation('normal')
 ROTATIONS = (NORMAL, RIGHT, INVERTED, LEFT)

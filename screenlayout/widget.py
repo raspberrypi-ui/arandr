@@ -465,7 +465,7 @@ class ARandRWidget(Gtk.DrawingArea):
 
             or_m = Gtk.Menu()
             for rotation in ROTATIONS:
-                i = Gtk.CheckMenuItem("%s" % rotation)
+                i = Gtk.CheckMenuItem("%s" % rotation.capitalize())
                 i.props.draw_as_radio = True
                 i.props.active = (output_config.rotation == rotation)
 

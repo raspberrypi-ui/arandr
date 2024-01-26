@@ -36,7 +36,7 @@ class XRandR:
     configuration = None
     state = None
     command = "xrandr"
-    compositor = ""
+    compositor = "openbox"
 
     def __init__(self, display=None, force_version=False):
         """Create proxy object and check for xrandr at `display`. Fail with
@@ -153,7 +153,7 @@ class XRandR:
                     elif part[0] == '--pos':
                         output.position = Position(part[1])
                     elif part[0] == '--rotate':
-                        output.rotation = self._remap_rotation(part[1])
+                        output.rotation = Rotation(part[1])
                     else:
                         raise FileSyntaxError()
                 output.active = True
@@ -195,10 +195,10 @@ class XRandR:
 
                 geometry = Geometry(hsplit[2])
 
-                current_rotation = NORMAL
-                for rotation in ROTATIONS:
-                    if hsplit[4] == rotation.lower():
-                        current_rotation = Rotation(rotation)
+                if hsplit[4] in ('left', 'right', 'normal', 'inverted', '90', '180', '270'):
+                    current_rotation = Rotation(hsplit[4])
+                else:
+                    current_rotation = NORMAL
             else:
                 active = False
                 geometry = None
@@ -562,7 +562,7 @@ class XRandR:
                         curx = pos[0]
                         cury = pos[1]
                     elif res[0] == 'Transform:':
-                        curt = self._remap_rotation (res[1]).lower()
+                        curt = res[1]
                         if curt == "left" or curt == "right":
                             tmp = curw
                             curw = curh
@@ -619,17 +619,10 @@ class XRandR:
                     elif part[0] == '--pos':
                         output.position = Position(part[1].replace(',','x'))
                     elif part[0] == '--transform':
-                        output.rotation = self._remap_rotation(part[1])
+                        output.rotation = Rotation(part[1])
                     else:
                         raise FileSyntaxError()
                 output.active = True
-
-    def _remap_rotation(self, rotname):
-        if rotname.isnumeric():
-            name = ('Left', 'Inverted', 'Right')[int(int(rotname) / 90 - 1)]
-        else:
-            name = rotname.capitalize()
-        return Rotation(name)
 
     #################### sub objects ####################
 
@@ -706,7 +699,7 @@ class XRandR:
                         args.append("--pos")
                         args.append(str(output.position))
                         args.append("--rotate")
-                        args.append (output.rotation.xname())
+                        args.append (output.rotation)
             return args
 
         def commandlineargswayfire(self):
