@@ -710,16 +710,14 @@ class XRandR:
                 if not output.active:
                     args.append("--off")
                 else:
-                    if Feature.PRIMARY in self._xrandr.features:
-                        if output.primary:
-                            args.append("--primary")
-                    modres=str(output.mode.name).split(" ")
-                    args.append("--mode")
-                    args.append(str(modres[0]) + '@' + modres[1])
-                    args.append("--pos")
-                    args.append(str(output.position).replace('x',','))
-                    args.append("--transform")
-                    args.append(output.rotation.wayname())
+                    if output.mode.name is not None:
+                        modres=str(output.mode.name).split(" ")
+                        args.append("--mode")
+                        args.append(str(modres[0]) + '@' + modres[1])
+                        args.append("--pos")
+                        args.append(str(output.position).replace('x',','))
+                        args.append("--transform")
+                        args.append(output.rotation.wayname())
             return args
 
         class OutputConfiguration:
