@@ -166,8 +166,7 @@ class Application:
             window=self.window, gui=self
         )
 
-        self.torev = self.widget._xrandr.get_screen_setup()
-        self.torevts = self.widget._xrandr.get_touchscreen_setup()
+        self.torev, self.torevts = self.widget._xrandr.get_config_strings()
         self.rev = None
         self.revts = None
 

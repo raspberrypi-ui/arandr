@@ -84,12 +84,21 @@ class XRandR:
 
     #################### loading ####################
 
-    def load_from_string(self, data):
+    def load_from_strings(self, confdata, tsdata):
         self._load_current_state()
         if self.command == 'xrandr':
-            self._load_from_commandlineargs(data.strip())
+            self._load_from_commandlineargs(confdata.strip())
         else:
-            self._load_from_commandlineargswlr(data.strip())
+            self._load_from_commandlineargswlr(confdata.strip())
+
+        for output_name in self.configuration.outputs:
+            self.configuration.outputs[output_name].touchscreen = ""
+        oplist = tsdata.split(",")
+        for tsop in oplist:
+            if tsop != "":
+                ts = tsop.split(':')
+                if ts[1] != "":
+                    self.configuration.outputs[ts[0]].touchscreen = ts[1]
 
     def _remap_rotation(self, rotname):
         if rotname.isnumeric():
@@ -378,6 +387,10 @@ class XRandR:
             displ.append(modes)
             items.append(displ)
         # create a dummy screenline just for consistency
+        if totw > 32767:
+            totw = 32767
+        if toth > 32767:
+            toth = 32767
         screenline = "Screen 0: minimum 16 x 16, current " + str(totw) + " x " + str(toth) + ", maximum 32767 x 32767"
         return screenline, items
 
@@ -434,11 +447,15 @@ class XRandR:
 
     #################### saving ####################
 
-    def get_screen_setup(self):
+    def get_config_strings(self):
+        ts = ""
+        for output_name in self.configuration.outputs:
+            ts += output_name + ":" + self.configuration.outputs[output_name].touchscreen + ","
+
         if self.command == 'xrandr':
-            return "xrandr " + " ".join(self.configuration.commandlineargs())
+            return "xrandr " + " ".join(self.configuration.commandlineargs()), ts
         else:
-            return "wlr-randr " + " ".join(self.configuration.commandlineargswayfire())
+            return "wlr-randr " + " ".join(self.configuration.commandlineargswayfire()), ts
 
     def check_configuration(self):
         vmax = self.state.virtual.max
@@ -469,7 +486,7 @@ class XRandR:
                 raise InadequateConfiguration(
                     _("An output is outside the virtual screen."))
 
-    def do_save(self, ts_changed):
+    def save_config(self, ts_changed):
         self.check_configuration()
         if self.compositor == 'openbox':
             self._output(*self.configuration.commandlineargs())
@@ -493,7 +510,7 @@ class XRandR:
         self._load_current_state()
 
     def _write_dispsetup_sh(self):
-        data = self.get_screen_setup()
+        data = "xrandr " + " ".join(self.configuration.commandlineargs())
         file = open ("/tmp/arandr/dispsetup.sh", "w")
         file.write ("#!/bin/sh\nif " + data + " --dryrun ; then \n" + data + "\nfi\n");
         for output_name in self.configuration.outputs:
@@ -549,7 +566,7 @@ class XRandR:
             if not os.path.isdir (path):
                 os.mkdir (path)
 
-        command = self.get_screen_setup() + " &"
+        command = "wlr-randr " + " ".join(self.configuration.commandlineargswayfire()) + " &"
         if os.path.isfile (inpath):
             outdata = ''
             found = False
@@ -600,22 +617,6 @@ class XRandR:
                 child.set("mapToOutput", output_name)
                 root.append(child)
         tree.write(outpath, xml_declaration=True, method="xml", encoding='UTF-8')
-
-    def get_touchscreen_setup(self):
-        ts = ""
-        for output_name in self.configuration.outputs:
-            ts += output_name + ":" + self.configuration.outputs[output_name].touchscreen + ","
-        return ts
-
-    def load_ts_from_string (self, data):
-        for output_name in self.configuration.outputs:
-            self.configuration.outputs[output_name].touchscreen = ""
-        oplist = data.split(",")
-        for tsop in oplist:
-            if tsop != "":
-                ts = tsop.split(':')
-                if ts[1] != "":
-                    self.configuration.outputs[ts[0]].touchscreen = ts[1]
 
     #################### sub objects ####################
 
