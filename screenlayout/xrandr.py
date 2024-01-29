@@ -407,7 +407,7 @@ class XRandR:
             if not os.path.isdir (path):
                 os.mkdir (path)
 
-        command = "wlr-randr " + " ".join(self.configuration.commandlineargswayfire()) + " &"
+        command = "wlr-randr " + " ".join(self.configuration.commandlineargswayfire()) + " &\n"
         if os.path.isfile (inpath):
             outdata = ''
             found = False
