@@ -421,6 +421,8 @@ class XRandR:
                 if found is False:
                     if line.strip()[-1] != '&':
                         outdata = outdata.rstrip() + " &\n"
+                    elif line[-1] != '\n':
+                        outdata += '\n'
                     outdata += command
         else:
             outdata = command
