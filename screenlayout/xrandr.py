@@ -24,7 +24,7 @@ import xml.etree.ElementTree as xmlet
 
 from .auxiliary import (
     BetterList, Size, Position, Geometry, FileLoadError, FileSyntaxError,
-    InadequateConfiguration, Rotation, ROTATIONS, NORMAL, NamedSize,
+    InadequateConfiguration, Rotation, ROTATIONS, NORMAL, NamedSize, wlrrot
 )
 from .i18n import _
 
@@ -153,6 +153,8 @@ class XRandR:
                     elif part[0] == '--pos':
                         output.position = Position(part[1])
                     elif part[0] == '--rotate':
+                        if part[1] not in ROTATIONS:
+                            raise FileSyntaxError()
                         output.rotation = Rotation(part[1])
                     else:
                         raise FileSyntaxError()
@@ -195,7 +197,7 @@ class XRandR:
 
                 geometry = Geometry(hsplit[2])
 
-                if hsplit[4] in ('left', 'right', 'normal', 'inverted', '90', '180', '270'):
+                if hsplit[4] in ROTATIONS:
                     current_rotation = Rotation(hsplit[4])
                 else:
                     current_rotation = NORMAL
@@ -206,38 +208,20 @@ class XRandR:
 
             output.rotations = set()
             for rotation in ROTATIONS:
-                if self.command == 'wlr-randr' or rotation.lower() in headline:
+                if self.command == 'wlr-randr' or rotation in headline:
                     output.rotations.add(rotation)
 
             currentname = None
-            if active:
-                if hsplit[4] == "left" or hsplit[4] == "right":
-                    curmode = str(geometry.height) + 'x' + str(geometry.width) + ' ' + hsplit[5]
-                else:
-                    curmode = str(geometry.width) + 'x' + str(geometry.height) + ' ' + hsplit[5]
-            else:
-                curmode = ""
             for detail, w, h, f in details:
-                name, _mode_raw = detail[0:2]
-                if self.command == 'wlr-randr':
-                    name = name + ' ' + f
-                else:
-                    name = name + f
+                name = detail[0] + f
                 try:
                     size = Size([int(w), int(h)])
                 except ValueError:
                     raise Exception(
                         "Output %s parse error: modename %s." % (output.name, name)
                     )
-                if self.command == 'wlr-randr':
-                    if curmode == name:
-                        currentname = name
-                else:
-                    if "*current" in detail:
-                        currentname = name
-                for x in ["+preferred", "*current"]:
-                    if x in detail:
-                        detail.remove(x)
+                if "current" in str(detail):
+                    currentname = name
 
                 for old_mode in output.modes:
                     if old_mode.name == name:
@@ -548,25 +532,25 @@ class XRandR:
                     modes.append ([line.strip().split()])
                     modes[-1].append (res[0])
                     modes[-1].append (res[1])
-                    strfreq = "%.3f" % float(res[2])
+                    strfreq = " %.3fHz" % float(res[2])
                     modes[-1].append (strfreq)
                     if 'current' in line:
                         curw = res[0]
                         curh = res[1]
                         curf = strfreq
-                        toth += int(curh)
-                        totw += int(curw)
                 elif len (res) == 2:
                     if res[0] == 'Position:':
                         pos = res[1].split(',')
                         curx = pos[0]
                         cury = pos[1]
                     elif res[0] == 'Transform:':
-                        curt = res[1]
-                        if curt == "left" or curt == "right":
+                        curt = wlrrot[res[1]]
+                        if curt == 'left' or curt == 'right':
                             tmp = curw
                             curw = curh
                             curh = tmp
+                        toth += int(curh)
+                        totw += int(curw)
                     elif res[0] == 'Enabled:':
                         if res[1] == "no" :
                             act = False
@@ -619,7 +603,9 @@ class XRandR:
                     elif part[0] == '--pos':
                         output.position = Position(part[1].replace(',','x'))
                     elif part[0] == '--transform':
-                        output.rotation = Rotation(part[1])
+                        if part[1] not in wlrrot:
+                            raise FileSyntaxError()
+                        output.rotation = Rotation(wlrrot[part[1]])
                     else:
                         raise FileSyntaxError()
                 output.active = True
@@ -699,7 +685,7 @@ class XRandR:
                         args.append("--pos")
                         args.append(str(output.position))
                         args.append("--rotate")
-                        args.append (output.rotation)
+                        args.append(output.rotation)
             return args
 
         def commandlineargswayfire(self):

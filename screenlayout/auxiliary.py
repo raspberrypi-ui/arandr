@@ -134,19 +134,10 @@ class Geometry(tuple):
 class Rotation(str):
     """String that represents a rotation by a multiple of 90 degree"""
 
-    def __new__(self, string):
-        if string not in ('left', 'right', 'normal', 'inverted', '90', '180', '270'):
-            raise Exception("Unknown rotation.")
-        if string == "left" or string == "90":
-            instance = super().__new__(self, "left")
-        if string == "right" or string == "270":
-            instance = super().__new__(self, "right")
-        if string == "inverted" or string == "180":
-            instance = super().__new__(self, "inverted")
-        if string == "normal":
-            instance = super().__new__(self, "normal")
-        return instance
-
+    def __init__(self, _original_me):
+        super().__init__()
+        if self not in ('left', 'right', 'normal', 'inverted'):
+            raise Exception("No know rotation.")
     is_odd = property(lambda self: self in ('left', 'right'))
     _angles = {'left': pi / 2, 'inverted': pi, 'right': 3 * pi / 2, 'normal': 0}
     angle = property(lambda self: Rotation._angles[self])
@@ -164,9 +155,15 @@ class Rotation(str):
         else:
             return self
 
-
 LEFT = Rotation('left')
 RIGHT = Rotation('right')
 INVERTED = Rotation('inverted')
 NORMAL = Rotation('normal')
 ROTATIONS = (NORMAL, RIGHT, INVERTED, LEFT)
+
+wlrrot = {
+    "90": "left",
+    "180": "inverted",
+    "270": "right",
+    "normal": "normal"
+}
