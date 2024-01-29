@@ -160,7 +160,6 @@ class XRandR:
                         raise FileSyntaxError()
                 output.active = True
 
-
     def _load_current_state(self):
         self.configuration = self.Configuration(self)
         self.state = self.State()
@@ -169,6 +168,7 @@ class XRandR:
             screenline, items = self._read_wlr_randr()
         else:
             screenline, items = self._read_xrandr()
+
         self._load_parse_screenline(screenline)
 
         for headline, details in items:
@@ -220,7 +220,7 @@ class XRandR:
                     raise Exception(
                         "Output %s parse error: modename %s." % (output.name, name)
                     )
-                if "current" in str(detail):
+                if "*current" in detail:
                     currentname = name
 
                 for old_mode in output.modes:
@@ -509,14 +509,13 @@ class XRandR:
         items = []
         curw = "0"
         curh = "0"
-        curf = "0"
         act = False
         towrite = False
         for line in output.split('\n'):
             if len (line) > 0 and not line.startswith(' '):
                 if towrite:
                     if act:
-                        displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
+                        displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt
                     else:
                         displ[0] = curout + ' connected ()'
                     displ.append(modes)
@@ -529,15 +528,16 @@ class XRandR:
             else:
                 res = line.replace (" px, ", " ").replace( "x", " ").split()
                 if 'px' in line :
-                    modes.append ([line.strip().split()])
-                    modes[-1].append (res[0])
-                    modes[-1].append (res[1])
-                    strfreq = " %.3fHz" % float(res[2])
-                    modes[-1].append (strfreq)
                     if 'current' in line:
+                        cur = '*current'
                         curw = res[0]
                         curh = res[1]
-                        curf = strfreq
+                    else:
+                        cur = ''
+                    modes.append ([[line.strip().split()[0], cur]])
+                    modes[-1].append (' ' + res[0])
+                    modes[-1].append (' ' + res[1])
+                    modes[-1].append (' %.3fHz' % float(res[2]))
                 elif len (res) == 2:
                     if res[0] == 'Position:':
                         pos = res[1].split(',')
@@ -558,7 +558,7 @@ class XRandR:
                             act = True
         if towrite:
             if act:
-                displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt + ' ' + curf
+                displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt
             else:
                 displ[0] = curout + ' connected ()'
             displ.append(modes)
@@ -672,20 +672,21 @@ class XRandR:
                     if Feature.PRIMARY in self._xrandr.features:
                         if output.primary:
                             args.append("--primary")
-                    if output.mode.name is not None:
-                        modres=str(output.mode.name).split(" ")
-                        args.append("--mode")
-                        args.append(str(modres[0]))
-                        args.append("--rate")
-                        if 'i' in str(modres[0]):
-                            freq = 2 * float(str(modres[1]).replace('Hz',''))
-                            args.append(str("{:.3f}".format (freq)))
-                        else:
-                            args.append(str(modres[1]).replace('Hz',''))
-                        args.append("--pos")
-                        args.append(str(output.position))
-                        args.append("--rotate")
-                        args.append(output.rotation)
+                    if output.mode.name is None:
+                        continue
+                    modres=str(output.mode.name).split(" ")
+                    args.append("--mode")
+                    args.append(str(modres[0]))
+                    args.append("--rate")
+                    if 'i' in str(modres[0]):
+                        freq = 2 * float(str(modres[1]).replace('Hz',''))
+                        args.append(str("{:.3f}".format (freq)))
+                    else:
+                        args.append(str(modres[1]).replace('Hz',''))
+                    args.append("--pos")
+                    args.append(str(output.position))
+                    args.append("--rotate")
+                    args.append(output.rotation)
             return args
 
         def commandlineargswayfire(self):
@@ -696,14 +697,15 @@ class XRandR:
                 if not output.active:
                     args.append("--off")
                 else:
-                    if output.mode.name is not None:
-                        modres=str(output.mode.name).split(" ")
-                        args.append("--mode")
-                        args.append(str(modres[0]) + '@' + modres[1])
-                        args.append("--pos")
-                        args.append(str(output.position).replace('x',','))
-                        args.append("--transform")
-                        args.append(output.rotation.wayname())
+                    if output.mode.name is None:
+                        continue
+                    modres=str(output.mode.name).split(" ")
+                    args.append("--mode")
+                    args.append(str(modres[0]) + '@' + modres[1])
+                    args.append("--pos")
+                    args.append(str(output.position).replace('x',','))
+                    args.append("--transform")
+                    args.append(output.rotation.wayname())
             return args
 
         class OutputConfiguration:
