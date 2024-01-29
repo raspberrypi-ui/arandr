@@ -134,10 +134,6 @@ class ARandRWidget(Gtk.DrawingArea):
     def revert(self):
         if self.rev == None or self.revts == None:
             return
-        confstr, tsstr = self._xrandr.get_config_strings()
-        ts = False
-        if self.revts != tsstr:
-            ts = True
 
         self._xrandr.load_from_strings (self.rev, self.revts)
         self.torev = self.rev
@@ -145,15 +141,12 @@ class ARandRWidget(Gtk.DrawingArea):
         self.rev = None
         self.revts = None
 
-        self._xrandr.save_config(ts)
+        self._xrandr.save_config()
         self.reload()
 
     def save(self):
         confstr, tsstr = self._xrandr.get_config_strings()
-        ts = False
-        if self.torevts != tsstr:
-            ts = True
-        if self.torev == confstr and ts == False:
+        if self.torev == confstr and self.torevts == tsstr:
             return False
 
         self.rev = self.torev
@@ -161,7 +154,7 @@ class ARandRWidget(Gtk.DrawingArea):
         self.torev = confstr
         self.torevts = tsstr
 
-        self._xrandr.save_config(ts)
+        self._xrandr.save_config()
         self.reload()
         return True
 

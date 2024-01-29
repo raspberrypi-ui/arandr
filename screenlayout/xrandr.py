@@ -331,24 +331,18 @@ class XRandR:
 
     #################### multi-format save functions ####################
 
-    def save_config(self, ts_changed):
+    def save_config(self):
         self.check_configuration()
         if self.compositor == 'openbox':
             self._output(*self.configuration.commandlineargs())
             self._write_dispsetup_sh()
-            if ts_changed:
-                for output_name in self.outputs:
-                    if self.state.outputs[output_name].touchscreen != "":
-                        tscmd = 'xinput --map-to-output "' + self.state.outputs[output_name].touchscreen + '" ' + output_name
-                        subprocess.run (tscmd, shell=True)
         elif self.compositor == "labwc":
             self._output(*self.configuration.commandlineargswayfire())
             self._write_labwc_config (False)
             self._write_labwc_config (True)
-            if ts_changed:
-                self._write_labwc_touchscreen (False)
-                self._write_labwc_touchscreen (True)
-                subprocess.run ("labwc --reconfigure", shell=True)
+            self._write_labwc_touchscreen (False)
+            self._write_labwc_touchscreen (True)
+            subprocess.run ("labwc --reconfigure", shell=True)
         elif self.compositor == "wayfire":
             self._write_wayfire_config (False)
             self._write_wayfire_config (True)
@@ -362,6 +356,7 @@ class XRandR:
             output_state = self.state.outputs[output_name]
             if output_state.touchscreen != "":
                 tscmd = 'xinput --map-to-output "' + output_state.touchscreen + '" ' + output_name
+                subprocess.run (tscmd, shell=True)   ## call xinput here, because why not?
                 file.write ("if xinput | grep -q \"" + output_state.touchscreen + "\" ; then " + tscmd + " ; fi\n")
         file.write ("if [ -e /usr/share/ovscsetup.sh ] ; then\n. /usr/share/ovscsetup.sh\nfi\nexit 0");
         file.close ()
@@ -383,7 +378,7 @@ class XRandR:
             output_config = self.configuration.outputs[output_name]
             output_state = self.state.outputs[output_name]
             section = 'output:' + output_name
-            key = output_config.mode.name.replace(' ','@').replace('.','')
+            key = output_config.mode.name.replace(' ','@').replace('.','').replace('Hz','')
             config[section] = {}
             if output_config.active:
                 config[section]['mode'] = key
