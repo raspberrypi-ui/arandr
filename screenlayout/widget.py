@@ -436,9 +436,11 @@ class ARandRWidget(Gtk.DrawingArea):
                 res_m.add(i)
 
             ref_m = Gtk.Menu()
+            freqs = False
             for mode in output_state.modes:
                 ms = mode.name.split()
-                if cur[0] == ms[0]:
+                if cur[0] == ms[0] and len(ms) > 1:
+                    freqs = True
                     if ("Hz" in str(ms[1])) :
                         i = Gtk.CheckMenuItem(str(ms[1]))
                     else:
@@ -498,7 +500,8 @@ class ARandRWidget(Gtk.DrawingArea):
 
             if len (output_state.modes):
                 menu.add(res_i)
-                menu.add(ref_i)
+                if freqs:
+                    menu.add(ref_i)
                 menu.add(or_i)
                 if len(self._xrandr.touchscreens) > 0:
                     ts_i = Gtk.MenuItem(_("Touchscreen"))

@@ -82,9 +82,9 @@ class XRandR:
         ret, err = proc.communicate()
         status = proc.wait()
         if status != 0:
-            raise Exception(command + " returned error code %d: %s" % (status, err))
+            raise Exception(self.command + " returned error code %d: %s" % (status, err))
         if err:
-            warnings.warn(command + " wrote to stderr, but did not report an error (Message was: %r)" % err)
+            warnings.warn(self.command + " wrote to stderr, but did not report an error (Message was: %r)" % err)
         return ret.decode('utf-8')
 
     #################### loading ####################
@@ -213,7 +213,10 @@ class XRandR:
 
             currentname = None
             for detail, w, h, f in details:
-                name = detail[0] + f
+                if f == "None":
+                    name = detail[0]
+                else:
+                    name = detail[0] + f
                 try:
                     size = Size([int(w), int(h)])
                 except ValueError:
@@ -534,7 +537,10 @@ class XRandR:
                     modes.append ([[line.strip().split()[0], cur]])
                     modes[-1].append (' ' + res[0])
                     modes[-1].append (' ' + res[1])
-                    modes[-1].append (' %.3fHz' % float(res[2]))
+                    if res[2].replace(".","").isnumeric() :
+                        modes[-1].append (' %.3fHz' % float(res[2]))
+                    else:
+                        modes[-1].append ('None')
                 elif len (res) == 2:
                     if res[0] == 'Position:':
                         pos = res[1].split(',')
@@ -698,7 +704,10 @@ class XRandR:
                         continue
                     modres=str(output.mode.name).split(" ")
                     args.append("--mode")
-                    args.append(str(modres[0]) + '@' + modres[1])
+                    if len(modres) > 1:
+                        args.append(str(modres[0]) + '@' + modres[1])
+                    else:
+                        args.append(str(modres[0]))
                     args.append("--pos")
                     args.append(str(output.position).replace('x',','))
                     args.append("--transform")
