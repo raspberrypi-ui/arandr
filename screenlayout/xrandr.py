@@ -570,7 +570,6 @@ class XRandR:
                             virtmodes[-1].append (res[0])
                             virtmodes[-1].append (res[1])
                             virtmodes[-1].append ('None')
-                            # small snag here - cannot undo to an unlisted mode !!!!!
                 elif 'Physical' in line:
                     physical = True
                 elif len (res) == 2:
@@ -630,7 +629,7 @@ class XRandR:
                     for i in range(len(output_argument) // 2)
                 ]
                 for part in parts:
-                    if part[0] == '--mode' or part[0] == '--custom-mode':
+                    if part[0] == '--mode':
                         mode = part[1].replace('@',' ')
                         for namedmode in output_state.modes:
                             if namedmode.name == mode:
@@ -638,6 +637,8 @@ class XRandR:
                                 break
                         else:
                             raise FileLoadError("Not a known mode: %s" % (part[1]))
+                    elif part[0] == '--custom-mode':
+                        output.mode = NamedSize(Size(part[1]), name=part[1])
                     elif part[0] == '--pos':
                         output.position = Position(part[1].replace(',','x'))
                     elif part[0] == '--transform':
