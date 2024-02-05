@@ -347,6 +347,8 @@ class XRandR:
             self._write_labwc_touchscreen (True)
             subprocess.run ("labwc --reconfigure", shell=True)
         elif self.compositor == "wayfire":
+            if 'NOOP-1' in self.configuration.commandlineargswayfire():
+                self._output(*self.configuration.commandlineargswayfire())
             self._write_wayfire_config (False)
             self._write_wayfire_config (True)
         self._load_current_state()
@@ -511,6 +513,18 @@ class XRandR:
         curh = "0"
         act = False
         towrite = False
+        physical = False
+        virtmodes = [
+            [['640x480', ''], '640', '480', 'None'],
+            [['720x480', ''], '720', '480', 'None'],
+            [['800x600', ''], '800', '600', 'None'],
+            [['1024x768', ''], '1024', '768', 'None'],
+            [['1280x720', ''], '1280', '720', 'None'],
+            [['1280x1024', ''], '1280', '1024', 'None'],
+            [['1600x1200', ''], '1600', '1200', 'None'],
+            [['1920x1080', ''], '1920', '1080', 'None'],
+        ]
+
         for line in output.split('\n'):
             if len (line) > 0 and not line.startswith(' '):
                 if towrite:
@@ -518,9 +532,13 @@ class XRandR:
                         displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt
                     else:
                         displ[0] = curout + ' connected ()'
-                    displ.append(modes)
+                    if physical:
+                        displ.append(modes)
+                    else:
+                        displ.append(virtmodes)
                     items.append(displ)
                 towrite = True
+                physical = False
                 curout = (line.split())[0]
                 displ = []
                 displ.append (line)
@@ -534,13 +552,27 @@ class XRandR:
                         curh = res[1]
                     else:
                         cur = ''
-                    modes.append ([[line.strip().split()[0], cur]])
-                    modes[-1].append (' ' + res[0])
-                    modes[-1].append (' ' + res[1])
-                    if res[2].replace(".","").isnumeric() :
-                        modes[-1].append (' %.3fHz' % float(res[2]))
-                    else:
-                        modes[-1].append ('None')
+                    if physical:
+                        modes.append ([[line.strip().split()[0], cur]])
+                        modes[-1].append (res[0])
+                        modes[-1].append (res[1])
+                        if res[2].replace(".","").isnumeric() :
+                            modes[-1].append (' %.3fHz' % float(res[2]))
+                        else:
+                            modes[-1].append ('None')
+                    elif 'current' in line:
+                        for mode in virtmodes:
+                            if line.strip().split()[0] == mode[0][0]:
+                                mode[0][1] = '*current'
+                                break
+                        else:
+                            virtmodes.append ([[line.strip().split()[0], cur]])
+                            virtmodes[-1].append (res[0])
+                            virtmodes[-1].append (res[1])
+                            virtmodes[-1].append ('None')
+                            # small snag here - cannot undo to an unlisted mode !!!!!
+                elif 'Physical' in line:
+                    physical = True
                 elif len (res) == 2:
                     if res[0] == 'Position:':
                         pos = res[1].split(',')
@@ -564,7 +596,10 @@ class XRandR:
                 displ[0] = curout + ' connected ' + curw + 'x' + curh + '+' + curx + '+' + cury + ' () ' + curt
             else:
                 displ[0] = curout + ' connected ()'
-            displ.append(modes)
+            if physical:
+                displ.append(modes)
+            else:
+                displ.append(virtmodes)
             items.append(displ)
         # create a dummy screenline just for consistency
         if totw > 32767:
@@ -595,7 +630,7 @@ class XRandR:
                     for i in range(len(output_argument) // 2)
                 ]
                 for part in parts:
-                    if part[0] == '--mode':
+                    if part[0] == '--mode' or part[0] == '--custom-mode':
                         mode = part[1].replace('@',' ')
                         for namedmode in output_state.modes:
                             if namedmode.name == mode:
@@ -703,10 +738,11 @@ class XRandR:
                     if output.mode.name is None:
                         continue
                     modres=str(output.mode.name).split(" ")
-                    args.append("--mode")
                     if len(modres) > 1:
+                        args.append("--mode")
                         args.append(str(modres[0]) + '@' + modres[1])
                     else:
+                        args.append("--custom-mode")
                         args.append(str(modres[0]))
                     args.append("--pos")
                     args.append(str(output.position).replace('x',','))
