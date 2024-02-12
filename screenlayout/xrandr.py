@@ -633,10 +633,7 @@ class XRandR:
                         modes.append ([[line.strip().split()[0], cur]])
                         modes[-1].append (res[0])
                         modes[-1].append (res[1])
-                        if res[2].replace(".","").isnumeric() :
-                            modes[-1].append (' %.3fHz' % float(res[2]))
-                        else:
-                            modes[-1].append ('None')
+                        modes[-1].append (' %.3fHz' % float(res[2]))
                     elif 'current' in line:
                         for mode in virtmodes:
                             if line.strip().split()[0] == mode[0][0]:
