@@ -412,27 +412,42 @@ class XRandR:
             if not os.path.isdir (path):
                 os.mkdir (path)
 
-        command = "wlr-randr " + " ".join(self.configuration.commandlineargswayfire()) + " &\n"
         if os.path.isfile (inpath):
-            outdata = ''
-            found = False
-            with open (inpath, "r") as infile:
-                for line in infile:
-                    if line.find ('wlr-randr') != -1:
-                        outdata += command
-                        found = True
-                    else:
-                        outdata += line
-                if found is False:
-                    if line.strip()[-1] != '&':
-                        outdata = outdata.rstrip() + " &\n"
-                    elif line[-1] != '\n':
-                        outdata += '\n'
-                    outdata += command
+            data = open(inpath).read().splitlines()
         else:
-            outdata = command
+            data = []
+
+        for output_name, output in self.configuration.outputs.items():
+            args = ["wlr-randr", "--output"]
+            args.append(output_name)
+            if not output.active:
+                args.append("--off")
+            else:
+                if output.mode.name is None:
+                    continue
+                modres=str(output.mode.name).split(" ")
+                if len(modres) > 1:
+                    args.append("--mode")
+                    args.append(str(modres[0]) + '@' + modres[1])
+                else:
+                    args.append("--custom-mode")
+                    args.append(str(modres[0]))
+                args.append("--pos")
+                args.append(str(output.position).replace('x',','))
+                args.append("--transform")
+                args.append(output.rotation.wayname())
+            command = " ".join(args) + " &"
+
+            found = False
+            for i, line in enumerate(data):
+                if output_name in line:
+                    data[i] = command
+                    found = True
+            if found is False:
+                data.append(command)
+
         with open (outpath, "w") as outfile:
-            outfile.write(outdata)
+            outfile.write("\n".join(data))
 
     def _write_labwc_touchscreen(self, greeter):
         if greeter:
