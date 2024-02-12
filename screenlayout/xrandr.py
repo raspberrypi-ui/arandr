@@ -340,9 +340,9 @@ class XRandR:
             self._output(*self.configuration.commandlineargs())
             self._write_dispsetup_sh()
         elif self.compositor == "labwc":
-            self._output(*self.configuration.commandlineargswayfire())
-            self._write_labwc_config (False)
-            self._write_labwc_config (True)
+            self._write_kanshi_config (False)
+            self._write_kanshi_config (True)
+            subprocess.run ("pkill --signal SIGHUP kanshi", shell=True)
             self._write_labwc_touchscreen (False)
             self._write_labwc_touchscreen (True)
             subprocess.run ("labwc --reconfigure", shell=True)
@@ -401,6 +401,64 @@ class XRandR:
             config.remove_section (section)
         with open (outpath, 'w') as configfile:
             config.write (configfile)
+
+    def _write_kanshi_config(self, greeter):
+        if greeter:
+            inpath = "/usr/share/labwc/config.kanshi"
+            outpath = "/tmp/arandr/config.kanshi"
+        else:
+            inpath = outpath = os.path.expanduser ('~/.config/kanshi/config')
+            path = os.path.expanduser ('~/.config/kanshi')
+            if not os.path.isdir (path):
+                os.mkdir (path)
+
+        new_config = []
+        outputs = []
+        for output_name, output in self.configuration.outputs.items():
+            outputs.append (output_name)
+        cur_profile = ";".join(sorted(outputs))
+
+        new_config = []
+        if os.path.isfile (inpath):
+            with open (inpath, "r") as infile:
+                for line in infile:
+                    if "profile" in line:
+                        outputs = []
+                        this_profile = [line]
+                    elif "output" in line:
+                        outputs.append (line.strip().split(" ")[1])
+                        this_profile.append(line)
+                    elif "}" in line:
+                        profile = ";".join(sorted(outputs))
+                        this_profile.append (line)
+                        if profile != cur_profile:
+                            for item in this_profile:
+                                new_config.append (item)
+                            new_config.append ("\n")
+
+        new_config.append ("profile {\n")
+        for output_name, output in self.configuration.outputs.items():
+            opline = "\toutput " + output_name
+            if not output.active:
+                opline += " disable"
+            else:
+                if output.mode.name is None:
+                    continue
+                modres=str(output.mode.name).split(" ")
+                if len(modres) > 1:
+                    opline += (" mode ")
+                    opline += (str(modres[0]) + '@' + modres[1])
+                else:
+                    opline += (" mode --custom ")
+                    opline += (str(modres[0]))
+                opline += (" position ")
+                opline += (str(output.position).replace('x',','))
+                opline += (" transform ")
+                opline += (output.rotation.wayname())
+            new_config.append(opline + "\n")
+        new_config.append ("}\n")
+        with open (outpath, "w") as outfile:
+            outfile.write("".join(new_config))
 
     def _write_labwc_config(self, greeter):
         if greeter:
