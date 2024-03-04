@@ -101,7 +101,7 @@ class XRandR:
         oplist = tsdata.split(",")
         for tsop in oplist:
             if tsop != "":
-                ts = tsop.split(':')
+                ts = tsop.split('|')
                 if ts[1] != "":
                     self.state.outputs[ts[0]].touchscreen = ts[1]
 
@@ -296,7 +296,7 @@ class XRandR:
     def get_config_strings(self):
         ts = ""
         for output_name in self.outputs:
-            ts += output_name + ":" + self.state.outputs[output_name].touchscreen + ","
+            ts += output_name + "|" + self.state.outputs[output_name].touchscreen + ","
 
         if self.command == 'xrandr':
             return "xrandr " + " ".join(self.configuration.commandlineargs()), ts
