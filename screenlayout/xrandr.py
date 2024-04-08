@@ -622,6 +622,8 @@ class XRandR:
                 modes = []
             else:
                 res = line.replace (" px, ", " ").replace( "x", " ").split()
+                if len(res) > 3 and res[3] == 'Hz':
+                    physical = True
                 if 'px' in line :
                     if 'current' in line:
                         cur = '*current'
@@ -644,8 +646,6 @@ class XRandR:
                             virtmodes[-1].append (res[0])
                             virtmodes[-1].append (res[1])
                             virtmodes[-1].append ('None')
-                elif 'Physical' in line:
-                    physical = True
                 elif len (res) == 2:
                     if res[0] == 'Position:':
                         pos = res[1].split(',')
