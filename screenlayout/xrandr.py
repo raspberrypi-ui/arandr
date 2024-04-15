@@ -615,15 +615,16 @@ class XRandR:
                         displ.append(virtmodes)
                     items.append(displ)
                 towrite = True
-                physical = False
+                if "NOOP" in line:
+                    physical = False
+                else:
+                    physical = True
                 curout = (line.split())[0]
                 displ = []
                 displ.append (line)
                 modes = []
             else:
                 res = line.replace (" px, ", " ").replace( "x", " ").split()
-                if len(res) > 3 and res[3] == 'Hz':
-                    physical = True
                 if 'px' in line :
                     if 'current' in line:
                         cur = '*current'
