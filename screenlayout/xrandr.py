@@ -65,6 +65,7 @@ class XRandR:
                 self.features.add(Feature.PRIMARY)
 
         self._find_touchscreens()
+        self._find_backlights()
         self._load_current_state()
 
     def _get_outputs(self):
@@ -574,6 +575,24 @@ class XRandR:
                     if "xinput" in line and output_name in line:
                         touchscreen = line.split('"')[1]
         return touchscreen
+
+    #################### backlights ####################
+
+    def _find_backlights(self):
+        self.backlights = {}
+        bldevs = os.listdir ("/sys/class/backlight")
+        for bl in bldevs:
+            with open("/sys/class/backlight/" + bl + "/display_name","r") as f:
+                dispname = f.read().strip()
+                if dispname:
+                    self.backlights[dispname] = bl
+
+    def set_backlight(self, display, level):
+        with open("/sys/class/backlight/" + self.backlights.get(display) + "/max_brightness","r") as f:
+            maxlv = int(f.read().strip())
+        newlv = level * maxlv / 100
+        with open("/sys/class/backlight/" + self.backlights.get(display) + "/brightness","w") as f:
+            f.write(str(int(newlv)))
 
     #################### loading from wlr-randr ####################
 
