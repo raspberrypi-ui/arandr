@@ -594,6 +594,13 @@ class XRandR:
         with open("/sys/class/backlight/" + self.backlights.get(display) + "/brightness","w") as f:
             f.write(str(int(newlv)))
 
+    def get_backlight(self, display):
+        with open("/sys/class/backlight/" + self.backlights.get(display) + "/max_brightness","r") as f:
+            maxlv = int(f.read().strip())
+        with open("/sys/class/backlight/" + self.backlights.get(display) + "/brightness","r") as f:
+            level = int(f.read().strip())
+        return int(level * 100 / maxlv)
+
     #################### loading from wlr-randr ####################
 
     def _read_wlr_randr(self):

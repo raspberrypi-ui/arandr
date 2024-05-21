@@ -511,11 +511,13 @@ class ARandRWidget(Gtk.DrawingArea):
             if self._xrandr.backlights.get(output_name):
                 bl_i = Gtk.MenuItem(_("Backlight"))
                 bl_m = Gtk.Menu()
-                for pc in range (10, -1, -1):
-                    i = Gtk.CheckMenuItem(str(pc) + "0%")
+                cur = self._xrandr.get_backlight(output_name)
+                for pc in range (100, -10, -10):
+                    i = Gtk.CheckMenuItem(str(pc) + "%")
                     i.props.draw_as_radio = True
+                    i.props.active = (pc == cur)
                     def _bl_set(_menuitem, output_name, lev):
-                        self._xrandr.set_backlight(output_name, lev * 10)
+                        self._xrandr.set_backlight(output_name, lev)
                     i.connect('activate', _bl_set, output_name, pc)
                     bl_m.add(i)
                 menu.add(bl_i)
