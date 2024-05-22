@@ -582,24 +582,24 @@ class XRandR:
         self.backlights = {}
         bldevs = os.listdir ("/sys/class/backlight")
         for bl in bldevs:
-            with open("/sys/class/backlight/" + bl + "/display_name","r") as f:
+            with open("/sys/class/backlight/" + bl + "/display_name", "r") as f:
                 dispname = f.read().strip()
                 if dispname:
                     self.backlights[dispname] = bl
 
     def set_backlight(self, display, level):
-        with open("/sys/class/backlight/" + self.backlights.get(display) + "/max_brightness","r") as f:
+        with open("/sys/class/backlight/" + self.backlights.get(display) + "/max_brightness", "r") as f:
             maxlv = int(f.read().strip())
         newlv = level * maxlv / 100
-        with open("/sys/class/backlight/" + self.backlights.get(display) + "/brightness","w") as f:
-            f.write(str(int(newlv)))
+        with open("/sys/class/backlight/" + self.backlights.get(display) + "/brightness", "w") as f:
+            f.write(str (int (newlv)))
 
     def get_backlight(self, display):
-        with open("/sys/class/backlight/" + self.backlights.get(display) + "/max_brightness","r") as f:
-            maxlv = int(f.read().strip())
-        with open("/sys/class/backlight/" + self.backlights.get(display) + "/brightness","r") as f:
-            level = int(f.read().strip())
-        return int(level * 100 / maxlv)
+        with open("/sys/class/backlight/" + self.backlights.get(display) + "/max_brightness", "r") as f:
+            maxlv = int (f.read().strip())
+        with open("/sys/class/backlight/" + self.backlights.get(display) + "/brightness", "r") as f:
+            level = int (f.read().strip())
+        return 10 * round (int (level * 100 / maxlv) / 10)
 
     #################### loading from wlr-randr ####################
 
