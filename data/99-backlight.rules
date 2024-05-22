@@ -1,4 +1,0 @@
-SUBSYSTEM=="backlight", GROUP="input", MODE="0660"
-SUBSYSTEM=="backlight", KERNEL=="*", ACTION=="add", PROGRAM="/bin/sh -c 'chgrp -R input /sys/class/backlight && chmod -R g=u /sys/class/backlight'"
-SUBSYSTEM=="backlight", ACTION=="add", PROGRAM="/bin/sh -c 'chgrp -R input /sys%p && chmod -R g=u /sys%p'"
-

@@ -260,7 +260,6 @@ setup(name = PACKAGENAME,
         data_files = [
             ('share/applications', ['data/arandr.desktop']), # FIXME: use desktop-file-install?
             ('share/man/man1', ['build/arandr.1.gz', 'build/unxrandr.1.gz']),
-            ('lib/udev/rules.d', ['data/99-backlight.rules']),
             ],
         scripts = ['arandr', 'unxrandr'],
 )
