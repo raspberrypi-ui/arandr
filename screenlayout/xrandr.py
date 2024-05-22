@@ -582,10 +582,13 @@ class XRandR:
         self.backlights = {}
         bldevs = os.listdir ("/sys/class/backlight")
         for bl in bldevs:
-            with open("/sys/class/backlight/" + bl + "/display_name", "r") as f:
-                dispname = f.read().strip()
-                if dispname:
-                    self.backlights[dispname] = bl
+            try:
+                with open("/sys/class/backlight/" + bl + "/display_name", "r") as f:
+                    dispname = f.read().strip()
+                    if dispname:
+                        self.backlights[dispname] = bl
+            except FileNotFoundError:
+                pass
 
     def set_backlight(self, display, level):
         with open("/sys/class/backlight/" + self.backlights.get(display) + "/max_brightness", "r") as f:
