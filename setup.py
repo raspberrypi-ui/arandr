@@ -42,7 +42,7 @@ PO_DIR = 'data/po'
 POT_FILE = os.path.join(PO_DIR, 'messages.pot')
 
 PACKAGENAME = "arandr"
-PACKAGEVERSION = "0.1.10"
+PACKAGEVERSION = "0.1.11"
 AUTHOR = "chrysn"
 AUTHOR_MAIL = "chrysn@fsfe.org"
 URL = "http://christian.amsuess.com/tools/arandr/"
@@ -258,8 +258,7 @@ setup(name = PACKAGENAME,
             'update_translator_credits': update_translator_credits,
             },
         data_files = [
-            ('share/applications', ['data/arandr.desktop']),
-            ('lib/arandr', ['data/pwdarandr.sh']),
+            ('share/applications', ['data/arandr.desktop']), # FIXME: use desktop-file-install?
             ('share/man/man1', ['build/arandr.1.gz', 'build/unxrandr.1.gz']),
             ],
         scripts = ['arandr', 'unxrandr'],
