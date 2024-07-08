@@ -259,6 +259,7 @@ class Application:
             if self.widget._xrandr.compositor == 'labwc':
                 os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A mkdir -p /usr/share/labwc/")
                 os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A cp /tmp/arandr/* /usr/share/labwc/")
+                os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A cp ~/.config/kanshi/config /var/lib/lightdm/.config/kanshi")
             else:
                 os.system ("env SUDO_ASKPASS=/usr/lib/arandr/pwdarandr.sh sudo -A cp /tmp/arandr/*.* /usr/share/")
 
